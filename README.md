@@ -5,8 +5,10 @@
 - This Terraform will helps deploy Consul cluster on GCP
 - The repository includes:
   - Create a private VPC
-  - Create bastion host
-  - Create consul cluster
+  - Create bastion host with GCP Compute VN
+  - Create consul cluster with GCP Compute VM
+  - Create service account
+  - Create firewall
 
 ## Prerequisites
 

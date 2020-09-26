@@ -5,19 +5,19 @@ locals {
     es_consul_instance_lists = [
     {
       name          = "consul-1"
-      zone          = var.zone
+      zone          = format("%s-a", var.region)
       machine_type  = local.machine_type
       private_ip    = "10.127.0.3"
     },
     {
       name       = "consul-2"
-      zone       = var.zone
+      zone       = format("%s-b", var.region)
       machine_type  = local.machine_type
       private_ip = "10.127.0.4"
     },
     {
       name       = "consul-3"
-      zone       = var.zone
+      zone       = format("%s-c", var.region)
       machine_type  = local.machine_type
       private_ip = "10.127.0.5"
     },
@@ -52,6 +52,10 @@ resource "google_compute_instance" "vm_consul_cluster" {
   service_account {
     email = google_service_account.consul-cluster.email
     scopes = ["cloud-platform"]
+  }
+
+  metadata = {
+    enable-oslogin = "TRUE"
   }
 
   allow_stopping_for_update = true

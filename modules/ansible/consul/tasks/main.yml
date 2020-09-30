@@ -1,0 +1,99 @@
+---
+# Update operating system package
+- block:
+  - name: Update OS
+    apt:
+      update_cache: yes
+    become: yes
+
+  - name: Install OS require packages
+    apt:
+      pkg:
+        - zip
+        - unzip
+        - curl
+        - jq
+      state: present
+    become: yes
+
+# Create group and user consul
+- block:
+  - name: Create consul group
+    group:
+      name: "{{ consul_group }}"
+      state: present
+
+
+  - name: Create consul user
+    user:
+      name: "{{ consul_user }}"
+      comment: "Consul user"
+      group: "{{ consul_group }}"
+      system: true
+
+# Install consul
+- block:
+  - name: Ensure that the consul package {{ consul_download_url }} is download to {{ consul_installation_path }}
+    get_url:
+      url: "{{ consul_download_url }}"
+      dest: "{{ consul_installation_path }}"
+      sha256sum: "{{ consul_sha256_checksum }}"
+
+  - name: Extract the consul package {{ consul_installation_path }} to {{ consul_installation_dir }}
+    unarchive:
+      src: "{{ consul_installation_path }}"
+      dest: "{{ consul_installation_dir }}"
+
+  - name: Install consul to {{ system_bin_dir }}
+    copy:
+      src: "{{ consul_installation_dir/consul }}"
+      dest: "{{ system_bin_dir }}/consul"
+      owner: "{{ consul_user }}"
+      group: "{{ consul_group }}"
+      mode: "a+x"
+
+# Install run-consul
+- block:
+  - name: Install run-consul to {{ system_bin_dir }}
+    copy:
+      src: "{{ consul_run_consul_path }}"
+      dest: "{{ system_bin_dir }}/run-consul"
+      owner: "{{ consul_user }}"
+      group: "{{ consul_group }}"
+      mode: "a+x"
+
+# Install TLS
+- block:
+  - name: Create SSL directory
+    file:
+      dest: "{{ consul_tls_dir }}"
+      state: directory
+      owner: "{{ consul_user }}"
+      group: "{{ consul_group }}"
+      mode: 0755
+  
+  - name: Copy CA certificate
+    copy:
+      src: "{{ consul_installation_tls_ca_certificate_path }}"
+      dest: "{{ consul_tls_dir }}/ca.pem"
+      owner: "{{ consul_user }}"
+      group: "{{ consul_group }}"
+      mode: 0644
+  
+  - name: Copy Server certificate
+    copy:
+      src: "{{ consul_installation_tls_server_certificate_path }}"
+      dest: "{{ consul_tls_dir }}/server.pem"
+      owner: "{{ consul_user }}"
+      group: "{{ consul_group }}"
+      mode: 0644
+  
+  - name: Copy Server key
+    copy:
+      src: "{{ consul_installation_tls_server_key_path }}"
+      dest: "{{ consul_tls_dir }}/key.pem"
+      owner: "{{ consul_user }}"
+      group: "{{ consul_group }}"
+      mode: 0644
+  
+  when: consul_server_tls_enabled | bool

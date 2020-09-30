@@ -1,0 +1,31 @@
+---
+# Update OS and install dnsmasq
+- block:
+  - name: Update OS
+    apt:
+      update_cache: yes
+    become: yes
+
+  - name: Install dnsmasq
+    apt:
+      pkg:
+        - dnsmasq
+      state: present
+    become: yes
+
+- block:
+  - name: "Create dnsmasq config directory"
+    file:
+      dest: "{{ consul_dns_masq_config_dir }}"
+      state: directory
+      mode: 0755
+    become: yes
+
+  - name: Write consul config
+    copy: "{{ consul_dns_masq_config_file }}"
+    content: |
+      server=/{{ consul_domain }}/{{ consul_ip }}#{{ consul_dns_port }}
+      listen-address={{ consul_ip }}
+      bind-interfaces
+    become: yes
+

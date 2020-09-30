@@ -1,7 +1,7 @@
 resource "google_compute_firewall" "allow_ssh_to_bastion" {
   project = var.project
   name    = "allow-ssh-to-bastion"
-  network = google_compute_network.network.self_link
+  network = var.network_name
   direction = "INGRESS"
 
   allow {
@@ -9,13 +9,13 @@ resource "google_compute_firewall" "allow_ssh_to_bastion" {
     ports    = ["22"]
   }
 
-  source_tags = ["bastion"]
+  source_tags = var.source_tags
 }
 
 resource "google_compute_firewall" "allow_ssh_from_bastion" {
     project = var.project
     name = "allow-ssh-from-bastion"
-    network = google_compute_network.network.self_link
+    network = var.network_name
     direction = "INGRESS"
 
     allow {
@@ -24,9 +24,9 @@ resource "google_compute_firewall" "allow_ssh_from_bastion" {
 
     allow {
         protocol = "tcp"
-        ports = ["22"]
+        ports = ["22", "80", "443", "8888"]
     }
     
-    source_tags = ["bastion"]
-    target_tags = ["bastion-access"]
+    source_tags = var.source_tags
+    target_tags = var.target_tags
 }

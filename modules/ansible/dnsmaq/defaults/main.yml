@@ -1,0 +1,6 @@
+---
+consul_domain: "consul"
+consul_ip: "127.0.0.1"
+consul_dns_port: 8600
+dns_masq_config_dir: "/etc/dnsmasq.d"
+consul_dns_masq_config_file: "{{ dns_masq_config_dir }}/consul"

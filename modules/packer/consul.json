@@ -28,11 +28,49 @@
       "type": "shell",
       "inline": [
         "sudo mkdir -p /tmp/terraform-google-consul",
-        "git clone --branch master https://github.com/ducmeit1/tf-consul-gcp.git  /tmp/terraform-google-consul"
+        "git clone --branch master https://github.com/ducmeit1/tf-consul-gcp.git  /tmp/terraform-consul",
+        "sudo mv /tmp/terraform-consul/modules/run-consul/run-consul /opt/consul/run-consul",
+        "rm -rf /tmp/terraform-consul"
+      ]
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "sudo mkdir -p /opt/consul/tls"
+      ]
+    },
+    {
+      "type": "shell-local",
+      "command": "tar -cvzf tls.tar tls/*"
+    },
+    {
+      "type": "file",
+      "destination": "/opt/consul",
+      "source": "./tls.tar"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "cd /opt/consul",
+        "tar -vzxf /opt/consul/tls.tar",
+        "rm -rf /opt/consul/tls.tar"
       ]
     },
     {
       "type": "ansible",
       "playbook_file": "../ansible/install.yml"
+    },
+    {
+      "type": "shell",
+      "inline": [
+        "cd /opt/consul",
+        "rm -rf tls"
+      ]
+    },
+    {
+      "type": "shell-local",
+      "inline": [
+        "rm -rf tls.tar"
+      ]
     }]
   }

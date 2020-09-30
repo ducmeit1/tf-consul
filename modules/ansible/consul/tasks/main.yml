@@ -95,5 +95,3 @@
       owner: "{{ consul_user }}"
       group: "{{ consul_group }}"
       mode: 0644
-  
-  when: consul_server_tls_enabled | bool

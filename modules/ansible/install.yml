@@ -1,5 +1,7 @@
-- hosts: all
+- name: "Installing Consul"
+  hosts: all
   become: yes
   roles:
     - consul
     - dnsmaq
+  gather_facts: true

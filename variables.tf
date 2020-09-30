@@ -26,6 +26,7 @@ variable "subnetwork_name" {
 variable "storage_location" {
   type = string
   description = "The location of GCS on GCP"
+  default = null
 }
 
 variable "members" {

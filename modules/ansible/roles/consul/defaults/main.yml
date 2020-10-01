@@ -1,9 +1,10 @@
 ---
-consul_version: 1.8.4
+consul_installation_version: 1.8.4
 consul_installation_dir: "/tmp/terraform-consul"
-consul_tls_dir: "/tmp/terraform-consul/tls"
+consul_installation_tls_dir: "{{ consul_installation_dir }}/tls"
 consul_installation_path: "{{ consul_installation_dir }}/install-consul/install-consul"
-consul_ca_file_path: "{{ consul_tls_dir }}/ca.pem"
-consul_cert_file_path: "{{ consul_tls_dir }}/cert.pem"
-consul_key_file_path: "{{ consul_tls_dir }}/key.pem"
+consul_installation_ca_file_path: "{{ consul_tls_dir }}/ca.pem"
+consul_installation_cert_file_path: "{{ consul_tls_dir }}/cert.pem"
+consul_installation_key_file_path: "{{ consul_tls_dir }}/key.pem"
+consul_dir_path: "/opt/consul"
 consul_user: "consul"

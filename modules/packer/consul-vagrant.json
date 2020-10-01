@@ -1,28 +1,25 @@
 {
   "min_packer_version": "1.6.3",
   "variables": {
-    "project_id": "driven-stage-269911",
-    "zone": "asia-east1-c",
     "consul_version": "1.8.4"
   },
   "builders": [
     {
-      "name": "ubuntu-1804-lts",
-      "type": "googlecompute",
-      "image_name": "consul-ubuntu1804-lts-{{uuid | clean_resource_name}}",
-      "image_family": "consul",
-      "project_id": "{{user `project_id`}}",
-      "source_image_family": "ubuntu-1804-lts",
-      "zone": "{{user `zone`}}",
-      "ssh_username": "ubuntu"
+      "name": "consul-ubuntu-1804-lts-{{user `consul_version`}}",
+      "type": "vagrant",
+      "communicator": "ssh",
+      "provider": "virtualbox",
+      "source_path": "ubuntu/bionic64",
+      "add_force": true,
+      "box_version": 2,
+      "output_dir": "vagrant",
+      "box_name": "consul-{{user `consul_version`}}"
     }
   ],
   "provisioners": [
     {
       "type": "shell",
-      "inline": [
-        "mkdir -p /tmp/terraform-consul"
-      ]
+      "inline": ["mkdir -p /tmp/terraform-consul"]
     },
     {
       "type": "shell",
@@ -54,6 +51,7 @@
         "sudo mkdir -p /opt/dnsmasq",
         "sudo mv /tmp/terraform-consul/install-consul /opt/consul/",
         "sudo mv /tmp/terraform-consul/run-consul /opt/consul/",
+        "sudo mv /tmp/terraform-consul/tls /opt/consul/",
         "sudo mv /tmp/terraform-consul/install-dnsmasq /opt/dnsmasq/",
         "sudo chmod a+x /opt/consul/install-consul",
         "sudo chmod a+x /opt/consul/run-consul",
@@ -62,13 +60,11 @@
       "pause_before": "5s"
     },
     {
-      "type": "ansible",
-      "playbook_file": "{{template_dir}}/../ansible/install.yml",
-      "pause_before": "10s"
-    },
-    {
       "type": "shell",
-      "inline": ["sudo rm -rf /tmp/bash-commons", "sudo rm -rf /tmp/terraform-consul"]
+      "inline": [
+        "sudo rm -rf /tmp/bash-commons",
+        "sudo rm -rf /tmp/terraform-consul"
+      ]
     }
   ]
 }

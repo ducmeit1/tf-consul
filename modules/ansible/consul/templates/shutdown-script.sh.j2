@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+exec > >(tee /var/log/shutdown-script.log|logger -t shutdown-script -s 2>/dev/console) 2>&1
+
+systemctl stop consul

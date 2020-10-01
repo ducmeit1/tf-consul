@@ -78,6 +78,7 @@
       "type": "ansible",
       "playbook_file": "{{template_dir}}/../ansible/main.yml",
       "user": "packer",
+      "extra_arguments": ["-vv"],
       "pause_before": "5s"
     },
     {

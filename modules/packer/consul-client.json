@@ -73,8 +73,8 @@
     },
     {
       "type": "ansible",
-      "playbook_file": "{{template_dir}}/../ansible/install.yml",
-      "extra_arguments": ["-vvvv"]
+      "playbook_file": "{{template_dir}}/../ansible/main.yml",
+      "extra_arguments": ["-vv"]
     },
     {
       "type": "shell",

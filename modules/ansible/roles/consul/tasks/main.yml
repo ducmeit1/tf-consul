@@ -3,4 +3,3 @@
   shell: "{{ consul_installation_path }} --version {{ consul_version }} --path {{ consul_installation_dir }} --user {{ consul_user }} --ca-file-path {{ consul_ca_file_path }} --cert-file-path {{ consul_cert_file_path }} --key-file-path {{ consul_key_file_path }}"
   args:
     executable: /bin/bash
-  become: yes

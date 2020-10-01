@@ -6,7 +6,8 @@
     "consul_version": "1.8.4",
     "consul_ca_cert_path": "{{template_dir}}/tls/ca/ca.pem",
     "consul_server_cert_path": "{{template_dir}}/tls/server/cert.pem",
-    "consul_server_key_path": "{{template_dir}}/tls/server/key.pem"
+    "consul_server_key_path": "{{template_dir}}/tls/server/key.pem",
+    "gcp_account_file": "{{template_dir}}/credentials.json"
   },
   "builders": [
     {
@@ -17,10 +18,20 @@
       "project_id": "{{user `project_id`}}",
       "source_image_family": "ubuntu-1804-lts",
       "zone": "{{user `zone`}}",
-      "ssh_username": "consul"
+      "ssh_username": "consul",
+      "account_file": "{{user `gcp_account_file`}}"
     }
   ],
   "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "echo -ne '\n' | sudo apt-add-repository ppa:ansible/ansible",
+        "sudo apt-get update -y",
+        "sudo apt-get install -y ansible"
+      ],
+      "max_retries": 2
+    },
     {
       "type": "shell",
       "inline": [
@@ -55,26 +66,10 @@
       "destination": "/tmp/terraform-consul/tls/"
     },
     {
-      "type": "shell",
-      "inline": [
-        "sudo mkdir -p /opt/consul",
-        "sudo mkdir -p /opt/dnsmasq",
-        "sudo mkdir -p /opt/consul/tls",
-        "sudo mv /tmp/terraform-consul/install-consul /opt/consul/",
-        "sudo mv /tmp/terraform-consul/run-consul /opt/consul/",
-        "sudo mv /tmp/terraform-consul/install-dnsmasq /opt/dnsmasq/",
-        "sudo mv /tmp/terraform-consul/tls /opt/tls/",
-        "sudo chmod +x /opt/consul/install-consul",
-        "sudo chmod +x /opt/consul/run-consul",
-        "sudo chmod +x /opt/dnsmasq/install-dnsmasq",
-        "sudo chown -R consul:consul /opt/consul",
-        "sudo chown -R consul:consul /opt/dnsmasq"
-      ]
-    },
-    {
       "type": "ansible",
       "playbook_file": "{{template_dir}}/../ansible/main.yml",
-      "extra_arguments": ["-vvvv"]
+      "extra_arguments": ["-vv", "--become", "--become-method=sudo", "--become-user=root"],
+      "user": "root"
     },
     {
       "type": "shell",

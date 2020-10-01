@@ -25,5 +25,4 @@ vendor
 .test_data/
 
 credentials.json
-*.pem
 *vagrant

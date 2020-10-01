@@ -1,7 +1,7 @@
 ---
 consul_version: 1.8.4
-consul_installation_dir: "/opt/consul"
-consul_tls_dir: "/opt/consul/tls"
+consul_installation_dir: "/tmp/terraform-consul"
+consul_tls_dir: "/tmp/terraform-consul/tls"
 consul_installation_path: "{{ consul_installation_dir }}/install-consul/install-consul"
 consul_ca_file_path: "{{ consul_tls_dir }}/ca.pem"
 consul_cert_file_path: "{{ consul_tls_dir }}/cert.pem"

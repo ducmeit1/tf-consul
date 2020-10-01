@@ -2,4 +2,4 @@
 consul_domain: "consul"
 consul_ip: "127.0.0.1"
 consul_dns_port: 8600
-dnsmasq_installation_path: /opt/dnsmaq/install-dnsmasq/install-dnsmasq
+dnsmasq_installation_path: /tmp/terraform-consul/install-dnsmasq/install-dnsmasq

@@ -70,13 +70,6 @@ function retry {
   exit $exit_status
 }
 
-function install_dependencies {
-  log_info "Installing dependencies"
-
-  sudo apt-get update -y
-  sudo apt-get install -y curl unzip jq
-}
-
 function create_consul_user {
   local -r username="$1"
 
@@ -230,7 +223,6 @@ function install {
 
   log_info "Starting Consul install"
 
-  install_dependencies
   create_consul_user "$user"
   create_consul_install_paths "$path" "$user"
 

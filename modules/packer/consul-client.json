@@ -4,28 +4,40 @@
     "project_id": "driven-stage-269911",
     "zone": "asia-east1-c",
     "consul_version": "1.8.4",
+    "consul_tmp_terraform_dir": "/tmp/terraform-consul",
+    "bash_common_tmp_dir": "/tmp/bash-commons",
     "consul_ca_cert_path": "{{template_dir}}/tls/ca/ca.pem",
-    "consul_client_cert_path": "{{template_dir}}/tls/client/cert.pem",
-    "consul_client_key_path": "{{template_dir}}/tls/client/key.pem"
+    "consul_server_cert_path": "{{template_dir}}/tls/client/cert.pem",
+    "consul_server_key_path": "{{template_dir}}/tls/client/key.pem",
+    "gcp_account_file": "{{template_dir}}/credentials.json"
   },
   "builders": [
     {
-      "name": "ubuntu-1804-lts",
       "type": "googlecompute",
-      "image_name": "consul-client-v184-{{uuid | clean_resource_name}}",
+      "image_name": "consul-server-{{uuid | clean_resource_name}}",
       "image_family": "consul",
       "project_id": "{{user `project_id`}}",
-      "source_image_family": "ubuntu-1804-lts",
+      "source_image": "debian-9-stretch-v20200805",
+      "source_image_family": "debian-9",
       "zone": "{{user `zone`}}",
-      "ssh_username": "consul"
+      "ssh_username": "packer",
+      "ssh_password": "packer",
+      "account_file": "{{user `gcp_account_file`}}"
     }
   ],
   "provisioners": [
     {
       "type": "shell",
       "inline": [
-        "mkdir -p /tmp/terraform-consul",
-        "mkdir -p /tmp/terraform-consul/tls"
+        "sudo apt-get update -y",
+        "sudo apt-get install -y git zip unzip curl jq"
+      ]
+    }
+    ,{
+      "type": "shell",
+      "inline": [
+        "mkdir -p {{user `consul_tmp_terraform_dir`}}",
+        "mkdir -p {{user `consul_tmp_terraform_dir`}}/tls"
       ]
     },
     {
@@ -43,44 +55,36 @@
         "{{template_dir}}/../run-consul",
         "{{template_dir}}/../install-dnsmasq"
       ],
-      "destination": "/tmp/terraform-consul/"
+      "destination": "{{user `consul_tmp_terraform_dir`}}/"
     },
     {
       "type": "file",
       "sources": [
         "{{user `consul_ca_cert_path`}}",
-        "{{user `consul_client_cert_path`}}",
-        "{{user `consul_client_key_path`}}"
+        "{{user `consul_server_cert_path`}}",
+        "{{user `consul_server_key_path`}}"
       ],
-      "destination": "/tmp/terraform-consul/tls/"
+      "destination": "{{user `consul_tmp_terraform_dir`}}/tls/"
     },
     {
       "type": "shell",
       "inline": [
-        "sudo mkdir -p /opt/consul",
-        "sudo mkdir -p /opt/dnsmasq",
-        "sudo mkdir -p /opt/consul/tls",
-        "sudo mv /tmp/terraform-consul/install-consul /opt/consul/",
-        "sudo mv /tmp/terraform-consul/run-consul /opt/consul/",
-        "sudo mv /tmp/terraform-consul/install-dnsmasq /opt/dnsmasq/",
-        "sudo mv /tmp/terraform-consul/tls /opt/tls/",
-        "sudo chmod a+x /opt/consul/install-consul",
-        "sudo chmod a+x /opt/consul/run-consul",
-        "sudo chmod a+x /opt/dnsmasq/install-dnsmasq",
-        "sudo chown -R consul:consul /opt/consul",
-        "sudo chown -R consul:consul /opt/dnsmasq"
+        "sudo chmod a+x {{user `consul_tmp_terraform_dir`}}/install-consul/install-consul",
+        "sudo chmod a+x {{user `consul_tmp_terraform_dir`}}/run-consul/run-consul",
+        "sudo chmod a+x {{user `consul_tmp_terraform_dir`}}/install-dnsmasq/install-dnsmasq"
       ]
     },
     {
       "type": "ansible",
       "playbook_file": "{{template_dir}}/../ansible/main.yml",
-      "extra_arguments": ["-vv"]
+      "user": "packer",
+      "pause_before": "5s"
     },
     {
       "type": "shell",
       "inline": [
-        "sudo rm -rf /tmp/bash-commons",
-        "sudo rm -rf /tmp/terraform-consul"
+        "sudo rm -rf {{user `bash_common_tmp_dir`}}",
+        "sudo rm -rf {{user `consul_tmp_terraform_dir`}}"
       ]
     }
   ]

@@ -45,55 +45,59 @@ module "storage" {
 # This is for testing a standalone vm
 ##-----------------------------------
 
-resource "google_service_account" "vm-consul" {
-    project = var.project
-    account_id = "vm-consul"
-    display_name = "Service account for vm consul"
-}
+// locals {
+//   image_source = ""
+// }
 
-resource "google_service_account_iam_member" "vm-consul-sa" {
-    service_account_id = google_service_account.vm-consul.id
-    role = "roles/iam.serviceAccountUser"
-    member = format("serviceAccount:%s", google_service_account.vm-consul.email)
-}
+// resource "google_service_account" "vm-consul" {
+//     project = var.project
+//     account_id = "vm-consul"
+//     display_name = "Service account for vm consul"
+// }
 
-resource "google_compute_instance" "vm_consul" {
-  name = "vm-consul"
-  project = var.project
-  machine_type = "n1-standard-2"
-  zone = "asia-east1-c"
-  tags = ["bastion-access", "consul"]
-  boot_disk {
-    initialize_params {
-      image = "consul-server-v184-5f75cacd-639c-507a-84ec-887aa4a7739f"
-      size = 20
-    }
-  }
+// resource "google_service_account_iam_member" "vm-consul-sa" {
+//     service_account_id = google_service_account.vm-consul.id
+//     role = "roles/iam.serviceAccountUser"
+//     member = format("serviceAccount:%s", google_service_account.vm-consul.email)
+// }
 
-  network_interface {
-    network = module.network.network_self_link
-    subnetwork = module.network.subnetwork_self_link
-    network_ip = "10.127.0.3"
-  }
+// resource "google_compute_instance" "vm_consul" {
+//   name = "vm-consul"
+//   project = var.project
+//   machine_type = "n1-standard-2"
+//   zone = "asia-east1-c"
+//   tags = ["bastion-access", "consul"]
+//   boot_disk {
+//     initialize_params {
+//       image = local.image_source
+//       size = 20
+//     }
+//   }
 
-  scheduling {
-    automatic_restart   = false
-    on_host_maintenance = "TERMINATE"
-    preemptible         = true
-  }
+//   network_interface {
+//     network = module.network.network_self_link
+//     subnetwork = module.network.subnetwork_self_link
+//     network_ip = "10.127.0.3"
+//   }
 
-  service_account {
-    email = google_service_account.vm-consul.email
-    scopes = ["cloud-platform"]
-  }
+//   scheduling {
+//     automatic_restart   = false
+//     on_host_maintenance = "TERMINATE"
+//     preemptible         = true
+//   }
 
-  metadata = {
-    enable-oslogin = "TRUE"
-  }
+//   service_account {
+//     email = google_service_account.vm-consul.email
+//     scopes = ["cloud-platform"]
+//   }
 
-  allow_stopping_for_update = true
+//   metadata = {
+//     enable-oslogin = "TRUE"
+//   }
 
-  metadata_startup_script = <<EOT
-    curl -sSO https://dl.google.com/cloudagents/install-monitoring-agent.sh && sudo bash install-monitoring-agent.sh
-  EOT
-}
+//   allow_stopping_for_update = true
+
+//   metadata_startup_script = <<EOT
+//     curl -sSO https://dl.google.com/cloudagents/install-monitoring-agent.sh && sudo bash install-monitoring-agent.sh
+//   EOT
+// }

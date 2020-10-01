@@ -1,7 +1,7 @@
 ---
 consul_version: 1.8.4
 consul_installation_dir: "/opt/consul"
-consul_installation_path: "{{ consul_installation_dir }}/install-consul"
+consul_installation_path: "{{ consul_installation_dir }}/install-consul/install-consul"
 consul_ca_file_path: "{{ consul_installation_dir }}/tls/ca.pem"
 consul_cert_file_path: "{{ consul_installation_dir }}/tls/cert.pem"
 consul_key_file_path: "{{ consul_installation_dir }}/tls/key.pem"

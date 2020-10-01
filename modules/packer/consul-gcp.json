@@ -39,15 +39,11 @@
     {
       "type": "file",
       "sources": [
-        "{{template_dir}}/../install-consul/install-consul",
-        "{{template_dir}}/../run-consul/run-consul",
+        "{{template_dir}}/../install-consul",
+        "{{template_dir}}/../run-consul",
+        "{{template_dir}}/../install-dnsmasq",
         "{{template_dir}}/tls"
       ],
-      "destination": "/tmp/terraform-consul/"
-    },
-    {
-      "type": "file",
-      "source": "{{template_dir}}/../install-dnsmasq/install-dnsmasq",
       "destination": "/tmp/terraform-consul/"
     },
     {

@@ -11,14 +11,14 @@
   },
   "builders": [
     {
-      "name": "ubuntu-1804-lts",
       "type": "googlecompute",
-      "image_name": "consul-server-v184-{{uuid | clean_resource_name}}",
+      "image_name": "consul-server-{{uuid | clean_resource_name}}",
       "image_family": "consul",
       "project_id": "{{user `project_id`}}",
-      "source_image_family": "ubuntu-1804-lts",
+      "source_image": "debian-9-stretch-v20200805",
+      "source_image_family": "debian-9",
       "zone": "{{user `zone`}}",
-      "ssh_username": "consul",
+      "ssh_username": "debian",
       "account_file": "{{user `gcp_account_file`}}"
     }
   ],
@@ -26,17 +26,14 @@
     {
       "type": "shell",
       "inline": [
-        "echo -ne '\n' | sudo apt-add-repository ppa:ansible/ansible",
         "sudo apt-get update -y",
-        "sudo apt-get install -y ansible"
-      ],
-      "max_retries": 2
-    },
-    {
+        "sudo apt-get install -y git zip unzip curl jq"
+      ]
+    }
+    ,{
       "type": "shell",
       "inline": [
-        "mkdir -p /tmp/terraform-consul",
-        "mkdir -p /tmp/terraform-consul/tls"
+        "mkdir -p /tmp/terraform-consul"
       ]
     },
     {
@@ -66,9 +63,23 @@
       "destination": "/tmp/terraform-consul/tls/"
     },
     {
+      "type": "shell",
+      "inline": [
+        "sudo mkdir -p /opt/consul",
+        "sudo mkdir -p /opt/dnsmasq",
+        "sudo cp -r /tmp/terraform-consul/install-consul /opt/consul/",
+        "sudo cp -r /tmp/terraform-consul/run-consul /opt/consul/",
+        "sudo cp -r /tmp/terraform-consul/install-dnsmasq /opt/dnsmasq/",
+        "sudo cp -r /tmp/terraform-consul/tls /opt/consul/",
+        "sudo chmod a+x /opt/consul/install-consul/install-consul",
+        "sudo chmod a+x /opt/consul/run-consul/run-consul",
+        "sudo chmod a+x /opt/dnsmasq/install-dnsmasq/install-dnsmasq"
+      ],
+      "pause_before": "5s"
+    },
+    {
       "type": "ansible",
       "playbook_file": "{{template_dir}}/../ansible/main.yml",
-      "extra_arguments": ["-vv", "--become", "--become-method=sudo", "--become-user=root"],
       "user": "root"
     },
     {

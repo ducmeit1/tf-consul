@@ -3,6 +3,7 @@
 # with the following operating systems:
 #
 # - Ubuntu 18.04
+# - Debian 9
 
 set -e
 
@@ -30,7 +31,7 @@ function print_usage {
   echo
   echo "Usage: install-dnsmasq [OPTIONS]"
   echo
-  echo "Install Dnsmasq and configure it to forward requests for a specific domain to Consul. This script has been tested with Ubuntu 18.04."
+  echo "Install Dnsmasq and configure it to forward requests for a specific domain to Consul. This script has been tested with Ubuntu 18.04 and Debian 9."
   echo
   echo "Options:"
   echo
@@ -47,14 +48,8 @@ function install_dnsmasq {
   local -r consul_ip="$1"
 
   log_info "Installing Dnsmasq"
-
-  if os_is_ubuntu; then
-    sudo apt-get update -y
-    sudo apt-get install -y dnsmasq
-  else
-    log_error "Could not find apt-get. Cannot install on this OS."
-    exit 1
-  fi
+  sudo apt-get update -y
+  sudo apt-get install -y dnsmasq
 }
 
 function write_consul_config {

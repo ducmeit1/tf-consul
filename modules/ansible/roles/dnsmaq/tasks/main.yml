@@ -4,3 +4,4 @@
   shell: "{{ dnsmasq_installation_path }} --consul-domain {{ consul_domain }} --consul-ip {{ consul_ip }} --consul-dns-port {{ consul_dns_port }}"
   args:
     executable: /bin/bash
+  become: yes

@@ -28,7 +28,8 @@
       {
         "type": "shell",
         "inline": [
-          "mkdir -p /tmp/terraform-consul"
+          "mkdir -p /tmp/terraform-consul",
+          "mkdir -p /tmp/terraform-consul/tls"
         ]
       },
       {
@@ -71,6 +72,10 @@
           "sudo chmod a+x /opt/consul/run-consul",
           "sudo chmod a+x /opt/dnsmasq/install-dnsmasq"
         ]
+      },
+      {
+        "type": "ansible",
+        "playbook_file": "{{template_dir}}/../ansible/install.yml"
       },
       {
         "type": "shell",

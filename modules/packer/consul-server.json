@@ -23,12 +23,16 @@
   "provisioners": [
     {
       "type": "shell",
-      "inline": ["sudo apt update -y", "sudo apt install -y ansible"]
+      "inline": [
+        "sudo apt update -y",
+        "sudo apt install -y ansible"
+      ]
     },
     {
       "type": "shell",
       "inline": [
-        "mkdir -p /tmp/terraform-consul"
+        "mkdir -p /tmp/terraform-consul",
+        "mkdir -p /tmp/terraform-consul/tls"
       ]
     },
     {

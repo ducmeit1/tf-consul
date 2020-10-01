@@ -60,12 +60,12 @@ module "storage" {
 // resource "google_compute_instance" "vm_consul" {
 //   name = "vm-consul"
 //   project = var.project
-//   machine_type = "n2d-standard-2"
+//   machine_type = "n1-standard-2"
 //   zone = "asia-east1-c"
 //   tags = ["bastion-access", "consul"]
 //   boot_disk {
 //     initialize_params {
-//       image = "consul-ubuntu1804-lts-5f7568a2-804b-3dd5-451a-1b9f791f25ca"
+//       image = "consul-server-v184-5f75b4b4-ad0d-0439-796f-7ca264e1d1f1"
 //       size = 20
 //     }
 //   }

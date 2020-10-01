@@ -1,13 +1,8 @@
 ---
 consul_version: 1.8.4
-consul_download_url: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_linux_amd64.zip"
-consul_sha256_checksum: "0d74525ee101254f1cca436356e8aee51247d460b56fc2b4f7faef8a6853141f"
 consul_installation_dir: "/opt/consul"
-consul_installation_path: "{{ consul_installation_dir }}/consul.zip"
-consul_installation_tls_ca_certificate_path: "{{ consul_installation_dir }}/tls/ca.pem"
-consul_installation_tls_server_certificate_path: "{{ consul_installation_dir }}/tls/cert.pem"
-consul_installation_tls_server_key_path: "{{ consul_installation_dir }}/tls/key.pem"
-consul_tls_dir: "/usr/local/consul/tls"
-system_bin_dir: "/usr/local/bin"
+consul_installation_path: "{{ consul_installation_dir }}/install-consul"
+consul_ca_file_path: "{{ consul_installation_dir }}/tls/ca.pem"
+consul_cert_file_path: "{{ consul_installation_dir }}/tls/cert.pem"
+consul_key_file_path: "{{ consul_installation_dir }}/tls/key.pem"
 consul_user: "consul"
-consul_group: "consul"

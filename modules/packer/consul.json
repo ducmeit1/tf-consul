@@ -20,12 +20,9 @@
   "provisioners": [
     {
       "type": "shell",
-      "inline": ["mkdir -p /tmp/terraform-consul/modules"]
-    },
-    {
-      "type": "file",
-      "source": "{{template_dir}}/../../modules/",
-      "destination": "/tmp/terraform-consul/modules"
+      "inline": [
+        "mkdir -p /tmp/terraform-consul"
+      ]
     },
     {
       "type": "shell",
@@ -36,25 +33,42 @@
       ]
     },
     {
+      "type": "file",
+      "sources": [
+        "{{template_dir}}/../install-consul/install-consul",
+        "{{template_dir}}/../run-consul/run-consul",
+        "{{template_dir}}/tls"
+      ],
+      "destination": "/tmp/terraform-consul/"
+    },
+    {
+      "type": "file",
+      "source": "{{template_dir}}/../install-dnsmasq/install-dnsmasq",
+      "destination": "/tmp/terraform-consul/"
+    },
+    {
       "type": "shell",
       "inline": [
         "sudo mkdir -p /opt/consul",
-        "sudo cp -r /tmp/terraform-consul/modules/packer/tls /opt/consul/tls",
-        "sudo cp -r /tmp/terraform-consul/modules/run-consul/run-consul /opt/consul/",
-        "sudo chmod a+x /opt/consul/run-consul"
-      ]
+        "sudo mkdir -p /opt/consul/tls",
+        "sudo mkdir -p /opt/dnsmasq",
+        "sudo mv /tmp/terraform-consul/install-consul /opt/consul/",
+        "sudo mv /tmp/terraform-consul/run-consul /opt/consul/",
+        "sudo mv /tmp/terraform-consul/install-dnsmasq /opt/dnsmasq/",
+        "sudo chmod a+x /opt/consul/install-consul",
+        "sudo chmod a+x /opt/consul/run-consul",
+        "sudo chmod a+x /opt/dnsmasq/install-dnsmasq"
+      ],
+      "pause_before": "5s"
     },
     {
       "type": "ansible",
-      "playbook_file": "{{template_dir}}/../ansible/install.yml"
+      "playbook_file": "{{template_dir}}/../ansible/install.yml",
+      "pause_before": "10s"
     },
     {
       "type": "shell",
-      "inline": [
-        "sudo rm -rf /tmp/bash-commons",
-        "sudo rm -rf /tmp/terraform-consul",
-        "sudo rm -rf /opt/consul"
-      ]
+      "inline": ["sudo rm -rf /tmp/bash-commons", "sudo rm -rf /tmp/terraform-consul"]
     }
   ]
 }

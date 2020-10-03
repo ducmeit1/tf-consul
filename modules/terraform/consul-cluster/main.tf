@@ -4,11 +4,11 @@ terraform {
 
 # Create the Regional Managed Instance Group where Consul Server will live.
 resource "google_compute_region_instance_group_manager" "consul_server" {
-  project = var.gcp_project_id
+  project = var.project
   name    = format("%s-ig", var.cluster_name)
 
   base_instance_name = var.cluster_name
-  region             = var.gcp_region
+  region             = var.region
 
   version {
     instance_template = google_compute_instance_template.consul_server.self_link
@@ -41,7 +41,7 @@ resource "google_compute_region_instance_group_manager" "consul_server" {
 
 # Create the Instance Template that will be used to populate the Managed Instance Group.
 resource "google_compute_instance_template" "consul_server" {
-  project = var.gcp_project_id
+  project = var.project
 
   name_prefix = var.cluster_name
   description = var.cluster_description
@@ -102,5 +102,5 @@ resource "google_compute_instance_template" "consul_server" {
 # https://github.com/terraform-providers/terraform-provider-google/issues/2067.
 data "google_compute_image" "image" {
   name    = var.source_image
-  project = var.image_project_id != null ? var.image_project_id : var.gcp_project_id
+  project = var.image_project_id != null ? var.image_project_id : var.project
 }

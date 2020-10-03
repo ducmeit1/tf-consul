@@ -24,7 +24,7 @@ resource "google_compute_firewall" "allow_ssh_from_bastion" {
 
     allow {
         protocol = "tcp"
-        ports = ["22", "80", "443", "8888"]
+        ports = ["22", "80", "443", "8888", "5601", "9200"]
     }
     
     source_tags = var.source_tags

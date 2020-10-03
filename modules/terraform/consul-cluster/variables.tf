@@ -3,12 +3,12 @@
 # You must provide a value for each of these parameters.
 # ---------------------------------------------------------------------------------------------------------------------
 
-variable "gcp_project_id" {
+variable "project" {
   description = "The project to deploy the cluster in"
   type        = string
 }
 
-variable "gcp_region_id" {
+variable "region" {
   description = "All GCP resources will be launched in this Region."
   type        = string
 }

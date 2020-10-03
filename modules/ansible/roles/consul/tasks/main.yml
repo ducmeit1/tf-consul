@@ -4,3 +4,34 @@
   args:
     executable: /bin/bash
   become: yes
+- name: Install server startup script
+  vars:
+    - consul_mode
+  template:
+    src: startup-script-server.sh.j2
+    dest: /opt/consul/scripts/startup.sh
+    owner: consul
+    group: consul
+    mode: "a+x"
+  when:
+    consul_mode | "server"
+
+- name: Install client startup script
+  vars:
+    - consul_mode
+  template:
+    src: startup-script-client.sh.j2
+    dest: /opt/consul/scripts/startup.sh
+    owner: consul
+    group: consul
+    mode: "a+x"
+  when:
+    consul_mode | "client"
+
+- name: Install shutdown script
+  template:
+    src: shutdown-script.sh.j2
+    dest: /opt/consul/scripts/shutdown.sh
+    owner: consul
+    group: consul
+    mode: "a+x"

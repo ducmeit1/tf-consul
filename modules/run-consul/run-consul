@@ -14,8 +14,11 @@ readonly COMPUTE_INSTANCE_METADATA_URL="http://metadata.google.internal/computeM
 readonly GOOGLE_CLOUD_METADATA_REQUEST_HEADER="Metadata-Flavor: Google"
 readonly CLUSTER_SIZE_INSTANCE_METADATA_KEY_NAME="cluster-size"
 
-readonly DEFAULT_RAFT_PROTOCOL="3"
+readonly DEFAULT_ENABLE_CONSUL_CONNECT="false"
+readonly DEFAULT_ENABLE_MESH_GATEWAY_WAN_FEDERATION="false"
+readonly DEFAULT_SECONDARY_DATACENTER="false"
 
+readonly DEFAULT_HTTP_MAX_CONNECTIONS_PER_CLIENT="256"
 readonly DEFAULT_AUTOPILOT_CLEANUP_DEAD_SERVERS="true"
 readonly DEFAULT_AUTOPILOT_LAST_CONTACT_THRESHOLD="200ms"
 readonly DEFAULT_AUTOPILOT_MAX_TRAILING_LOGS="250"
@@ -32,7 +35,7 @@ source "$BASH_COMMONS_DIR/assert.sh"
 source "$BASH_COMMONS_DIR/log.sh"
 source "$BASH_COMMONS_DIR/os.sh"
 
-function print_usage {
+function print_usage() {
   echo
   echo "Usage: run-consul [OPTIONS]"
   echo
@@ -58,6 +61,11 @@ function print_usage {
   echo -e "  --key-file-path\tPath to the certificate key used to verify incoming connections. Optional. Must be specified with --enable-rpc-encryption and --cert-file-path."
   echo -e "  --verify-server-hostname\tWhen passed in, enable server hostname verification as part of RPC encryption. Each server in Consul should get their own certificate that contains SERVERNAME.DATACENTERNAME.consul in the hostname or SAN. This prevents an authenticated agent from being converted into a server that streams all data, bypassing ACLs."
   echo -e "  --environment\t\tA single environment variable in the key/value pair form 'KEY=\"val\"' to pass to Consul as environment variable when starting it up. Repeat this option for additional variables. Optional."
+  echo -e "  --http-max-conns-per-client\t\tConfigures a limit of how many concurrent TCP connections a single client IP address is allowed to open to the agent's HTTP(S) server. This affects the HTTP(S) servers in both client and server agents. Default value is $DEFAULT_HTTP_MAX_CONNECTIONS_PER_CLIENT. Optional."
+  echo -e "  --enable-connect\t\tEnable Consul Connect (Service Mesh). Default value is $DEFAULT_ENABLE_CONSUL_CONNECT. Optional."
+  echo -e "  --enable-mesh-gateway-wan-federation\t\tControls whether cross-datacenter federation traffic between servers is funneled through mesh gateways. Defaults to $DEFAULT_ENABLE_MESH_GATEWAY_WAN_FEDERATION. Optional."
+  echo -e "  --secondary-datacenter\t\tSet this consul datacenter is the secondary to connect to the primary datacenter with mesh gateway. Must be specified with --enable-connect and --enable-mesh-gateway-wan-federation. Default is $DEFAULT_SECONDARY_DATACENTER. Optional."
+  echo -e "  --primary-mesh-gateway-address\t\tThe address of primary mesh gateway to connect in wan federation mode. Optional. Must be specified with --enable-connect and --enable-mesh-gateway-wan-federation --secondary-datacenter."
   echo -e "  --skip-consul-config\tIf this flag is set, don't generate a Consul configuration file. Optional. Default is false."
   echo -e "  --recursor\tThis flag provides address of upstream DNS server that is used to recursively resolve queries if they are not inside the service domain for Consul. Repeat this option for additional variables. Optional."
   echo
@@ -78,7 +86,7 @@ function print_usage {
 }
 
 # Get the value at a specific Instance Metadata path.
-function get_instance_metadata_value {
+function get_instance_metadata_value() {
   local -r path="$1"
 
   log_info "Looking up Metadata value at $COMPUTE_INSTANCE_METADATA_URL/$path"
@@ -86,7 +94,7 @@ function get_instance_metadata_value {
 }
 
 # Get the value of the given Custom Metadata Key
-function get_instance_custom_metadata_value {
+function get_instance_custom_metadata_value() {
   local -r key="$1"
 
   log_info "Looking up Custom Instance Metadata value for key \"$key\""
@@ -94,13 +102,13 @@ function get_instance_custom_metadata_value {
 }
 
 # Get the ID of the Project in which this Compute Instance currently resides
-function get_instance_project_id {
+function get_instance_project_id() {
   log_info "Looking up Project ID"
   get_instance_metadata_value "project/project-id"
 }
 
 # Get the GCE Region in which this Compute Instance currently resides
-function get_instance_region {
+function get_instance_region() {
   log_info "Looking up Region of the current Compute Instance"
 
   # The value returned for zone will be of the form "projects/121238320500/zones/us-west1-a" so we need to split the string
@@ -111,13 +119,13 @@ function get_instance_region {
 }
 
 # Get the ID of the current Compute Instance
-function get_instance_name {
+function get_instance_name() {
   log_info "Looking up current Compute Instance name"
   get_instance_metadata_value "instance/name"
 }
 
 # Get the IP Address of the current Compute Instance
-function get_instance_ip_address {
+function get_instance_ip_address() {
   local network_interface_number="$1"
 
   # If no network interface number was specified, default to the first one
@@ -129,7 +137,7 @@ function get_instance_ip_address {
   get_instance_metadata_value "instance/network-interfaces/$network_interface_number/ip"
 }
 
-function split_by_lines {
+function split_by_lines() {
   local prefix="$1"
   shift
 
@@ -138,7 +146,7 @@ function split_by_lines {
   done
 }
 
-function generate_consul_config {
+function generate_consul_config() {
   local -r server="${1}"
   local -r config_dir="${2}"
   local -r user="${3}"
@@ -159,6 +167,11 @@ function generate_consul_config {
   local -r redundancy_zone_tag="${18}"
   local -r disable_upgrade_migration="${19}"
   local -r upgrade_version_tag=${20}
+  local -r http_max_conns_per_client=${21}
+  local -r enable_connect="${22}"
+  local -r enable_mesh_gateway_wan_federation="${23}"
+  local -r secondary_datacenter="${24}"
+  local -r primary_mesh_gateway_address="${25}"
   local -r config_path="$config_dir/$CONSUL_CONFIG_FILE"
 
   shift 20
@@ -181,20 +194,20 @@ function generate_consul_config {
   if [[ -z "$cluster_tag_name" ]]; then
     log_warn "The --cluster-tag-name property is empty. Will not automatically try to form a cluster based on Cluster Tag Name."
   else
-    retry_join_json=$(cat <<EOF
+    retry_join_json=$(
+      cat <<EOF
 "retry_join": ["provider=gce project_name=$project_id tag_value=$cluster_tag_name"],
 EOF
-)
+    )
   fi
 
   local recursors_config=""
   if [[ ${#recursors[@]} -ne 0 ]]; then
     recursors_config="\"recursors\" : [ "
-    for recursor in "${recursors[@]}"
-    do
-        recursors_config="${recursors_config}\"${recursor}\", "
+    for recursor in "${recursors[@]}"; do
+      recursors_config="${recursors_config}\"${recursor}\", "
     done
-    recursors_config=$(echo "${recursors_config}"| sed 's/, $//')" ],"
+    recursors_config=$(echo "${recursors_config}" | sed 's/, $//')" ],"
   fi
 
   local bootstrap_expect=""
@@ -208,7 +221,8 @@ EOF
   fi
 
   local autopilot_configuration
-  autopilot_configuration=$(cat <<EOF
+  autopilot_configuration=$(
+    cat <<EOF
 "autopilot": {
   "cleanup_dead_servers": $cleanup_dead_servers,
   "last_contact_threshold": "$last_contact_threshold",
@@ -219,7 +233,7 @@ EOF
   "upgrade_version_tag": "$upgrade_version_tag"
 },
 EOF
-)
+  )
 
   local gossip_encryption_configuration=""
   if [[ "$enable_gossip_encryption" == "true" && -n "$gossip_encryption_key" ]]; then
@@ -230,20 +244,71 @@ EOF
   local rpc_encryption_configuration=""
   if [[ "$enable_rpc_encryption" == "true" && -n "$ca_path" && -n "$cert_file_path" && -n "$key_file_path" ]]; then
     log_info "Creating RPC encryption configuration"
-    rpc_encryption_configuration=$(cat <<EOF
+    rpc_encryption_configuration=$(
+      cat <<EOF
 "verify_outgoing": true,
 "verify_incoming": true,
 "verify_server_hostname": $verify_server_hostname,
 "ca_path": "$ca_path",
 "cert_file": "$cert_file_path",
 "key_file": "$key_file_path",
+"auto_encrypt": {
+  "allow_tls": true
+},
 EOF
-)
+    )
   fi
+  local primary_mesh_gateway_address_configuration=""
+  local consul_connect_configuration=""
+  if [[ "$enable_connect" == "true" ]]; then
+    log_info "Creating consul connect configuration"
+    if [[ "$enable_mesh_gateway_wan_federation" == "true" ]]; then
+      consul_connect_configuration=$(
+        cat <<EOF
+"connect": {
+  "enabled" true,
+  "enable_mesh_gateway_wan_federation": true
+},
+EOF
+      )
+      if [[ "$secondary_datacenter" == "true" && -n "$primary_mesh_gateway_address" ]]; then
+        primary_mesh_gateway_address_configuration=$(
+          cat <<EOF
+"primary_gateways": [$primary_mesh_gateway_address],
+EOF
+        )
+      fi
+    fi
+  else
+    consul_connect_configuration=$(
+      cat <<EOF
+"connect": {
+  "enabled" true,
+},
+EOF
+    )
+  fi
+
+  local http_max_conns_per_client_configuration=$(
+    cat <<EOF
+"limits": {
+    http_max_conns_per_client: $http_max_conns_per_client
+},
+EOF
+  )
+
+  local performance_configuration=$(
+    cat <<EOF
+"performance": {
+    "raft_multiplier": 1
+}
+EOF
+  )
 
   log_info "Creating default Consul configuration"
   local default_config_json
-  default_config_json=$(cat <<EOF
+  default_config_json=$(
+    cat <<EOF
 {
   "advertise_addr": "$instance_ip_address",
   "bind_addr": "$instance_ip_address",
@@ -254,20 +319,25 @@ EOF
   $recursors_config
   $retry_join_json
   "server": $server,
+  "ui": $ui,
+  "log_level": "INFO",
   $gossip_encryption_configuration
   $rpc_encryption_configuration
   $autopilot_configuration
-  "ui": $ui
+  $consul_connect_configuration
+  $primary_mesh_gateway_address_configuration
+  $http_max_conns_per_client_configuration
+  $performance_configuration
 }
 EOF
-)
+  )
 
   log_info "Installing Consul config file in $config_path"
-  echo "$default_config_json" | jq '.' > "$config_path"
+  echo "$default_config_json" | jq '.' >"$config_path"
   chown "$user:$user" "$config_path"
 }
 
-function generate_systemd_config {
+function generate_systemd_config() {
   local -r systemd_config_path="$1"
   local -r consul_config_dir="$2"
   local -r consul_data_dir="$3"
@@ -281,7 +351,8 @@ function generate_systemd_config {
 
   log_info "Creating systemd config file to run Consul in $systemd_config_path"
 
-  local -r unit_config=$(cat <<EOF
+  local -r unit_config=$(
+    cat <<EOF
 [Unit]
 Description="HashiCorp Consul - A service mesh solution"
 Documentation=https://www.consul.io/
@@ -289,9 +360,10 @@ Requires=network-online.target
 After=network-online.target
 ConditionFileNotEmpty=$config_path
 EOF
-)
+  )
 
-  local -r service_config=$(cat <<EOF
+  local -r service_config=$(
+    cat <<EOF
 [Service]
 Type=notify
 User=$consul_user
@@ -305,7 +377,7 @@ TimeoutSec=300s
 LimitNOFILE=65536
 $(split_by_lines "Environment=" "${environment[@]}")
 EOF
-)
+  )
 
   local log_config=""
   if [[ -n $consul_systemd_stdout ]]; then
@@ -315,19 +387,20 @@ EOF
     log_config+="StandardError=$consul_systemd_stderr\n"
   fi
 
-  local -r install_config=$(cat <<EOF
+  local -r install_config=$(
+    cat <<EOF
 [Install]
 WantedBy=multi-user.target
 EOF
-)
+  )
 
-  echo -e "$unit_config" > "$systemd_config_path"
-  echo -e "$service_config" >> "$systemd_config_path"
-  echo -e "$log_config" >> "$systemd_config_path"
-  echo -e "$install_config" >> "$systemd_config_path"
+  echo -e "$unit_config" >"$systemd_config_path"
+  echo -e "$service_config" >>"$systemd_config_path"
+  echo -e "$log_config" >>"$systemd_config_path"
+  echo -e "$install_config" >>"$systemd_config_path"
 }
 
-function start_consul {
+function start_consul() {
   log_info "Reloading systemd config and starting Consul"
 
   sudo systemctl daemon-reload
@@ -336,12 +409,12 @@ function start_consul {
 }
 
 # Based on: http://unix.stackexchange.com/a/7732/215969
-function get_owner_of_path {
+function get_owner_of_path() {
   local -r path="$1"
   ls -ld "$path" | awk '{print $3}'
 }
 
-function get_owner_home_dir {
+function get_owner_home_dir() {
   local -r user="$1"
 
   local home_dir=""
@@ -355,7 +428,7 @@ function get_owner_home_dir {
   echo "$home_dir"
 }
 
-function run {
+function run() {
   local server="false"
   local client="false"
   local config_dir=""
@@ -376,6 +449,11 @@ function run {
   local key_file_path=""
   local environment=()
   local skip_consul_config="false"
+  local http_max_conns_per_client="$DEFAULT_HTTP_MAX_CONNECTIONS_PER_CLIENT"
+  local enable_connect="$DEFAULT_ENABLE_CONSUL_CONNECT"
+  local enable_mesh_gateway_wan_federation="$DEFAULT_ENABLE_MESH_GATEWAY_WAN_FEDERATION"
+  local secondary_datacenter="$DEFAULT_SECONDARY_DATACENTER"
+  local primary_mesh_gateway_address=""
   local recursors=()
   local cleanup_dead_servers="$DEFAULT_AUTOPILOT_CLEANUP_DEAD_SERVERS"
   local last_contact_threshold="$DEFAULT_AUTOPILOT_LAST_CONTACT_THRESHOLD"
@@ -388,137 +466,156 @@ function run {
     local key="$1"
 
     case "$key" in
-      --server)
-        server="true"
-        ;;
-      --client)
-        client="true"
-        ;;
-      --config-dir)
-        assert_not_empty "$key" "$2"
-        config_dir="$2"
-        shift
-        ;;
-      --data-dir)
-        assert_not_empty "$key" "$2"
-        data_dir="$2"
-        shift
-        ;;
-      --systemd-stdout)
-        assert_not_empty "$key" "$2"
-        systemd_stdout="$2"
-        shift
-        ;;
-      --systemd-stderr)
-        assert_not_empty "$key" "$2"
-        systemd_stderr="$2"
-        shift
-        ;;
-      --bin-dir)
-        assert_not_empty "$key" "$2"
-        bin_dir="$2"
-        shift
-        ;;
-      --user)
-        assert_not_empty "$key" "$2"
-        user="$2"
-        shift
-        ;;
-      --cluster-tag-name)
-        assert_not_empty "$key" "$2"
-        cluster_tag_name="$2"
-        shift
-        ;;
-      --datacenter)
-        assert_not_empty "$key" "$2"
-        datacenter="$2"
-        shift
-        ;;
-      --autopilot-cleanup-dead-servers)
-        assert_not_empty "$key" "$2"
-        cleanup_dead_servers="$2"
-        shift
-        ;;
-      --autopilot-last-contact-threshold)
-        assert_not_empty "$key" "$2"
-        last_contact_threshold="$2"
-        shift
-        ;;
-      --autopilot-max-trailing-logs)
-        assert_not_empty "$key" "$2"
-        max_trailing_logs="$2"
-        shift
-        ;;
-      --autopilot-server-stabilization-time)
-        assert_not_empty "$key" "$2"
-        server_stabilization_time="$2"
-        shift
-        ;;
-      --autopilot-redundancy-zone-tag)
-        assert_not_empty "$key" "$2"
-        redundancy_zone_tag="$2"
-        shift
-        ;;
-      --autopilot-disable-upgrade-migration)
-        disable_upgrade_migration="true"
-        shift
-        ;;
-      --autopilot-upgrade-version-tag)
-        assert_not_empty "$key" "$2"
-        upgrade_version_tag="$2"
-        shift
-        ;;
-      --enable-gossip-encryption)
-        enable_gossip_encryption="true"
-        ;;
-      --gossip-encryption-key)
-        assert_not_empty "$key" "$2"
-        gossip_encryption_key="$2"
-        shift
-        ;;
-      --enable-rpc-encryption)
-        enable_rpc_encryption="true"
-        ;;
-      --verify-server-hostname)
-        verify_server_hostname="true"
-        ;;
-      --ca-path)
-        assert_not_empty "$key" "$2"
-        ca_path="$2"
-        shift
-        ;;
-      --cert-file-path)
-        assert_not_empty "$key" "$2"
-        cert_file_path="$2"
-        shift
-        ;;
-      --key-file-path)
-        assert_not_empty "$key" "$2"
-        key_file_path="$2"
-        shift
-        ;;
-      --environment)
-        assert_not_empty "$key" "$2"
-        environment+=("$2")
-        shift
-        ;;
-      --skip-consul-config)
-        skip_consul_config="true"
-        ;;
-      --recursor)
-        assert_not_empty "$key" "$2"
-        recursors+=("$2")
-        shift
-        ;;
-      --help)
-        print_usage
-        exit
-        ;;
-      *)
-        log_error "Unrecognized argument: $key"
-        print_usage
-        exit 1
-        ;;
+    --server)
+      server="true"
+      ;;
+    --client)
+      client="true"
+      ;;
+    --config-dir)
+      assert_not_empty "$key" "$2"
+      config_dir="$2"
+      shift
+      ;;
+    --data-dir)
+      assert_not_empty "$key" "$2"
+      data_dir="$2"
+      shift
+      ;;
+    --systemd-stdout)
+      assert_not_empty "$key" "$2"
+      systemd_stdout="$2"
+      shift
+      ;;
+    --systemd-stderr)
+      assert_not_empty "$key" "$2"
+      systemd_stderr="$2"
+      shift
+      ;;
+    --bin-dir)
+      assert_not_empty "$key" "$2"
+      bin_dir="$2"
+      shift
+      ;;
+    --user)
+      assert_not_empty "$key" "$2"
+      user="$2"
+      shift
+      ;;
+    --cluster-tag-name)
+      assert_not_empty "$key" "$2"
+      cluster_tag_name="$2"
+      shift
+      ;;
+    --datacenter)
+      assert_not_empty "$key" "$2"
+      datacenter="$2"
+      shift
+      ;;
+    --autopilot-cleanup-dead-servers)
+      assert_not_empty "$key" "$2"
+      cleanup_dead_servers="$2"
+      shift
+      ;;
+    --autopilot-last-contact-threshold)
+      assert_not_empty "$key" "$2"
+      last_contact_threshold="$2"
+      shift
+      ;;
+    --autopilot-max-trailing-logs)
+      assert_not_empty "$key" "$2"
+      max_trailing_logs="$2"
+      shift
+      ;;
+    --autopilot-server-stabilization-time)
+      assert_not_empty "$key" "$2"
+      server_stabilization_time="$2"
+      shift
+      ;;
+    --autopilot-redundancy-zone-tag)
+      assert_not_empty "$key" "$2"
+      redundancy_zone_tag="$2"
+      shift
+      ;;
+    --autopilot-disable-upgrade-migration)
+      disable_upgrade_migration="true"
+      shift
+      ;;
+    --autopilot-upgrade-version-tag)
+      assert_not_empty "$key" "$2"
+      upgrade_version_tag="$2"
+      shift
+      ;;
+    --enable-gossip-encryption)
+      enable_gossip_encryption="true"
+      ;;
+    --gossip-encryption-key)
+      assert_not_empty "$key" "$2"
+      gossip_encryption_key="$2"
+      shift
+      ;;
+    --enable-rpc-encryption)
+      enable_rpc_encryption="true"
+      ;;
+    --verify-server-hostname)
+      verify_server_hostname="true"
+      ;;
+    --ca-path)
+      assert_not_empty "$key" "$2"
+      ca_path="$2"
+      shift
+      ;;
+    --cert-file-path)
+      assert_not_empty "$key" "$2"
+      cert_file_path="$2"
+      shift
+      ;;
+    --key-file-path)
+      assert_not_empty "$key" "$2"
+      key_file_path="$2"
+      shift
+      ;;
+    --environment)
+      assert_not_empty "$key" "$2"
+      environment+=("$2")
+      shift
+      ;;
+    --http_max_conns_per_client)
+      assert_not_empty "$key" "$2"
+      http_max_conns_per_client="$2"
+      shift
+      ;;
+    --enable-connect)
+      enable_connect="true"
+      ;;
+    --enable-mesh-gateway-wan-federation)
+      enable_mesh_gateway_wan_federation="true"
+      ;;
+    --secondary-datacenter)
+      secondary_datacenter="true"
+      ;;
+    --primary-mesh-gateway-address)
+      assert_not_empty "$key" "$2"
+      primary_mesh_gateway_address="$2"
+      shift
+      ;;
+    --skip-consul-config)
+      skip_consul_config="true"
+      ;;
+    --recursor)
+      assert_not_empty "$key" "$2"
+      recursors+=("$2")
+      shift
+      ;;
+    --help)
+      print_usage
+      exit
+      ;;
+    *)
+      log_error "Unrecognized argument: $key"
+      print_usage
+      exit 1
+      ;;
     esac
 
     shift
@@ -561,10 +658,35 @@ function run {
     if [[ "$enable_gossip_encryption" == "true" ]]; then
       assert_not_empty "--gossip-encryption-key" "$gossip_encryption_key"
     fi
+
     if [[ "$enable_rpc_encryption" == "true" ]]; then
       assert_not_empty "--ca-path" "$ca_path"
       assert_not_empty "--cert-file-path" "$cert_file_path"
       assert_not_empty "--key_file_path" "$key_file_path"
+    fi
+
+    if [[ "$enable_mesh_gateway_wan_federation" == "true" ]]; then
+      if [[ "$enable_connect" == "false" ]]; then
+        log_error "Exactly --enable-connect must be set to use --enable-mesh-gateway-wan-federation"
+        exit 1
+      fi
+      if [[ "$secondary_datacenter" == "true" ]]; then
+        assert_not_empty "--primary-mesh-gateway-address" "$primary_mesh_gateway_address"
+      fi
+    fi
+
+    if [[ "$secondary_datacenter" == "true" ]]; then
+      if [[ "$enable_connect" == "false" ]]; then
+        log_error "Exactly --enable-connect must be set to use --enable-mesh-gateway-wan-federation"
+        exit 1
+      fi
+
+      if [[ "$enable_mesh_gateway_wan_federation" == "false" ]]; then
+        log_error "Exactly --enable_mesh_gateway_wan_federation must be set to use --secondary-datacenter"
+        exit 1
+      fi
+
+      assert_not_empty "--primary-mesh-gateway-address" "$primary_mesh_gateway_address"
     fi
 
     generate_consul_config "$server" \
@@ -587,6 +709,11 @@ function run {
       "$redundancy_zone_tag" \
       "$disable_upgrade_migration" \
       "$upgrade_version_tag" \
+      "$http_max_conns_per_client" \
+      "$enable_connect" \
+      "$enable_mesh_gateway_wan_federation" \
+      "$secondary_datacenter" \
+      "$primary_mesh_gateway_address" \
       "${recursors[@]}"
   fi
 

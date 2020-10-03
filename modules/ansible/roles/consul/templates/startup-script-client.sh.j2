@@ -2,4 +2,4 @@
 
 exec > >(tee /var/log/startup-script.log|logger -t startup-script -s 2>/dev/console) 2>&1
 
-/opt/consul/bin/run-consul --client --cluster-tag-name "${cluster_tag_name}"
+/opt/consul/bin/run-consul --client --cluster-tag-name {{ consul_cluster_tag_name }} --datacenter {{ consul_datacenter }} --config-dir {{ consul_config_dir }} --data-dir {{ consul_data_dir }} --bin-dir {{ consul_bin_dir }} --user {{ consul_user }} --enable-gossip-encryption --gossip-encryption-key {{ consul_gossip_encryption_key }} --enable-rpc-encryption --ca-path {{ consul_ca_file_path }} --cert-file-path {{ consul_cert_file_path }} --key-file-path {{ consul_key_file_path }}

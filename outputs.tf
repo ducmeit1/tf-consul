@@ -1,9 +1,9 @@
 output "gcp_project" {
-  value = var.project
+  value = var.gcp_project
 }
 
 output "gcp_region" {
-  value = var.region
+  value = var.gcp_region
 }
 
 output "cluster_name" {

@@ -68,10 +68,12 @@ module "bucket" {
 }
 
 module "consul_servers" {
-  source = "../"
+  source = "github.com/ducmeit1/tf-consul-gcp"
 
   gcp_project         = local.project
   gcp_region          = local.region
+  gcp_network         = local.network
+  gcp_subnetwork      = local.subnetwork
   cluster_name        = local.consul_server_cluster_name
   cluster_description = "Consul Server cluster"
   cluster_size        = local.consul_server_cluster_size
@@ -114,6 +116,6 @@ module "consul_servers" {
 }
 
 data "google_compute_zones" "available" {
-  project = var.gcp_project
-  region  = var.gcp_region
+  project = local.project
+  region  = local.region
 }

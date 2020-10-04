@@ -39,7 +39,7 @@ function print_usage() {
   echo
   echo "Usage: run-consul [OPTIONS]"
   echo
-  echho "This script is used to configure and run Consul on a Google Compute Instance."
+  echo "This script is used to configure and run Consul on a Google Compute Instance."
   echo
   echo "Options:"
   echo
@@ -266,7 +266,7 @@ EOF
       consul_connect_configuration=$(
         cat <<EOF
 "connect": {
-  "enabled" true,
+  "enabled": true,
   "enable_mesh_gateway_wan_federation": true
 },
 EOF
@@ -292,7 +292,7 @@ EOF
   local http_max_conns_per_client_configuration=$(
     cat <<EOF
 "limits": {
-    http_max_conns_per_client: $http_max_conns_per_client
+    "http_max_conns_per_client": $http_max_conns_per_client
 },
 EOF
   )
@@ -580,7 +580,7 @@ function run() {
       environment+=("$2")
       shift
       ;;
-    --http_max_conns_per_client)
+    --http-max-conns-per-client)
       assert_not_empty "$key" "$2"
       http_max_conns_per_client="$2"
       shift

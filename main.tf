@@ -69,7 +69,8 @@ resource "google_compute_instance_template" "consul_server" {
 
       # The Terraform Google provider currently doesn't support a `metadata_shutdown_script` argument so we manually
       # set it here using the instance metadata.
-      "shutdown-script" = var.shutdown_script
+      "shutdown-script" = var.shutdown_script,
+      "enable-oslogin" = "TRUE"
     },
     var.custom_metadata,
   )

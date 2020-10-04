@@ -19,16 +19,16 @@ locals {
   consul_server_cluster_name = "server-dc1"
   consul_server_cluster_size = 1
   consul_server_cluster_tag_name = "consul"
-  consul_server_startup_script = "/opt/consul/scripts/server_startup.sh"
-  consul_client_startup_script = "/opt/consul/scripts/client_startup.sh"
+  consul_server_startup_script = "/opt/consul/scripts/server-startup.sh"
+  consul_client_startup_script = "/opt/consul/scripts/client-startup.sh"
   consul_shutdown_script = "/opt/consul/scripts/shutdown.sh"
   consul_server_allowed_inbound_cidr_blocks_http_api = []
   consul_server_allowed_inbound_cidr_blocks_dns = []
   machine_type = "n1-standard-1"
   root_volume_disk_type = "pd-ssd"
   root_volume_disk_size_gb = 30
-  consul_server_source_image = "consul-server-5f7a1399-0f3b-51c3-7c83-02905c9b5ed7"
-  consul_client_source_image = "consul-client-5f7a14a2-9677-3ba8-e4ea-44d843e4c823"
+  consul_server_source_image = "consul-server-5f7a1fbb-2cc7-87e7-76d2-4e3f72e6dadd"
+  consul_client_source_image = "consul-client-5f7a20ba-d5df-689a-23df-ae7d67072350"
   consul_custom_network_tags = ["bastion-access"]
 }
 
@@ -63,7 +63,6 @@ module "bastion" {
   disk_size_gb = 10
   image_family = "ubuntu-1804-lts"
   preemptible = false
-  members = ["user:ducmeitks2019@gmail.com"]
 }
 
 # Optional: Add a bucket to save terraform state on GCS

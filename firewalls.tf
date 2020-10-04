@@ -44,7 +44,7 @@ resource "google_compute_firewall" "allow_inbound_http_api" {
   project = var.network_project_id != null ? var.network_project_id : var.gcp_project
 
   name    = "${var.cluster_name}-rule-external-api-access"
-  network = var.network_name
+  network = var.gcp_network
 
   allow {
     protocol = "tcp"
@@ -69,7 +69,7 @@ resource "google_compute_firewall" "allow_inbound_dns" {
   project = var.network_project_id != null ? var.network_project_id : var.gcp_project
 
   name    = "${var.cluster_name}-rule-external-dns-access"
-  network = var.network_name
+  network = var.gcp_network
 
   allow {
     protocol = "tcp"

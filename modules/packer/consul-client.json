@@ -51,9 +51,9 @@
     {
       "type": "file",
       "sources": [
-        "{{template_dir}}/../install-consul",
-        "{{template_dir}}/../run-consul",
-        "{{template_dir}}/../install-dnsmasq"
+        "{{template_dir}}/../scripts/install-consul",
+        "{{template_dir}}/../scripts/run-consul",
+        "{{template_dir}}/../scripts/install-dnsmasq"
       ],
       "destination": "{{user `consul_tmp_terraform_dir`}}/"
     },

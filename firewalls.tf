@@ -2,10 +2,10 @@
 # - This Firewall Rule may be redundant depnding on the settings of your VPC Network, but if your Network is locked down,
 #   this Rule will open up the appropriate ports.
 resource "google_compute_firewall" "allow_intracluster_consul" {
-  project = var.network_project_id != null ? var.network_project_id : var.gcp_project_id
+  project = var.network_project_id != null ? var.network_project_id : var.gcp_project
 
   name    = "${var.cluster_name}-rule-cluster"
-  network = var.network_name
+  network = var.gcp_network
 
   allow {
     protocol = "tcp"

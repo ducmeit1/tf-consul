@@ -15,7 +15,7 @@ locals {
   ip_cidr_range = "10.126.0.0/20"
   total_nat_ips = "1"
   credentials_file = "credentials.json"
-  consul_server_cluster_name = "consul-server-dc1"
+  consul_server_cluster_name = "server-dc1"
   consul_server_cluster_size = 3
   consul_server_cluster_tag_name = "consul"
   consul_startup_script = "/opt/consul/scripts/startup.sh"

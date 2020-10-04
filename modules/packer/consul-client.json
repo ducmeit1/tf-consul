@@ -2,7 +2,7 @@
   "min_packer_version": "1.6.3",
   "variables": {
     "project_id": "driven-stage-269911",
-    "zone": "asia-east1-c",
+    "zone": "asia-southeast1-c",
     "consul_version": "1.8.4",
     "consul_tmp_terraform_dir": "/tmp/terraform-consul",
     "bash_common_tmp_dir": "/tmp/bash-commons",

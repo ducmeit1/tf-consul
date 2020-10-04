@@ -4,34 +4,35 @@
   args:
     executable: /bin/bash
   become: yes
+
+- name: Create consul scripts directory
+  file:
+    dest: "{{ consul_scripts_dir }}"
+    state: directory
+    owner: "{{ consul_user }}"
+    group: "{{ consul_user }}"
+    mode: 0755
+
 - name: Install server startup script
-  vars:
-    - consul_mode
   template:
     src: startup-script-server.sh.j2
-    dest: /opt/consul/scripts/startup.sh
-    owner: consul
-    group: consul
+    dest: "{{ consul_scripts_dir }}/server-startup.sh"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_user }}"
     mode: "a+x"
-  when:
-    consul_mode | "server"
 
-- name: Install client startup script
-  vars:
-    - consul_mode
+- name: Install server startup script
   template:
     src: startup-script-client.sh.j2
-    dest: /opt/consul/scripts/startup.sh
-    owner: consul
-    group: consul
+    dest: "{{ consul_scripts_dir }}/client-startup.sh"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_user }}"
     mode: "a+x"
-  when:
-    consul_mode | "client"
 
 - name: Install shutdown script
   template:
     src: shutdown-script.sh.j2
-    dest: /opt/consul/scripts/shutdown.sh
-    owner: consul
-    group: consul
+    dest: "{{ consul_scripts_dir }}/shutdown.sh"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_user }}"
     mode: "a+x"

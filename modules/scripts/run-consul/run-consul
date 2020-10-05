@@ -45,7 +45,8 @@ function print_usage() {
   echo
   echo -e "  --server\t\tIf set, run in server mode. Optional. Exactly one of --server or --client must be set."
   echo -e "  --client\t\tIf set, run in client mode. Optional. Exactly one of --server or --client must be set."
-  echo -e "  --cluster-tag-name\tAutomatically form a cluster with Instances that have the same value for this Compute Instance tag name. Optional."
+  echo -e "  --cluster-tag-name\t\tAutomatically form a cluster with Instances that have the same value for this Compute Instance tag name. Optional."
+  echo -e "  --zone-pattern\t\tBoost speed the auto cloud join by find with zone pattern. Optional."
   echo -e "  --datacenter\t\tThe name of the datacenter Consul is running in. Optional. If not specified, will default to GCP region name."
   echo -e "  --config-dir\t\tThe path to the Consul config folder. Optional. Default is the absolute path of '../config', relative to this script."
   echo -e "  --data-dir\t\tThe path to the Consul data folder. Optional. Default is the absolute path of '../data', relative to this script."
@@ -172,6 +173,7 @@ function generate_consul_config() {
   local -r enable_mesh_gateway_wan_federation="${23}"
   local -r secondary_datacenter="${24}"
   local -r primary_mesh_gateway_address="${25}"
+  local -r zone_pattern="${26}"
   local -r config_path="$config_dir/$CONSUL_CONFIG_FILE"
 
   shift 20
@@ -194,7 +196,7 @@ function generate_consul_config() {
   else
     retry_join_json=$(
       cat <<EOF
-"retry_join": ["provider=gce project_name=$project_id tag_value=$cluster_tag_name"],
+"retry_join": ["provider=gce project_name=$project_id zone_pattern=$zone_pattern tag_value=$cluster_tag_name"],
 EOF
     )
   fi
@@ -426,6 +428,7 @@ function run() {
   local bin_dir=""
   local user=""
   local cluster_tag_name=""
+  local zone_pattern=""
   local datacenter=""
   local upgrade_version_tag=""
   local enable_gossip_encryption="false"
@@ -492,6 +495,11 @@ function run() {
     --cluster-tag-name)
       assert_not_empty "$key" "$2"
       cluster_tag_name="$2"
+      shift
+      ;;
+    --zone-pattern)
+      assert_not_empty "$key" "$2"
+      zone_pattern="$2"
       shift
       ;;
     --datacenter)
@@ -695,7 +703,8 @@ function run() {
       "$enable_connect" \
       "$enable_mesh_gateway_wan_federation" \
       "$secondary_datacenter" \
-      "$primary_mesh_gateway_address"
+      "$primary_mesh_gateway_address" \
+      "$zone_pattern"
   fi
 
   generate_systemd_config "$SYSTEMD_CONFIG_PATH" "$config_dir" "$data_dir" "$systemd_stdout" "$systemd_stderr" "$bin_dir" "$user" "${environment[@]}"

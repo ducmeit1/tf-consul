@@ -18,7 +18,7 @@ locals {
   bastion_network_ip = "10.126.0.2"
   consul_server_cluster_name = "server-dc1"
   consul_server_cluster_size = 3
-  consul_server_cluster_tag_name = "consul"
+  consul_server_cluster_tag_name = "consul_gcp_dc1"
   consul_server_startup_script = "/opt/consul/scripts/server-startup.sh"
   consul_client_startup_script = "/opt/consul/scripts/client-startup.sh"
   consul_shutdown_script = "/opt/consul/scripts/shutdown.sh"
@@ -27,8 +27,8 @@ locals {
   machine_type = "n1-standard-1"
   root_volume_disk_type = "pd-ssd"
   root_volume_disk_size_gb = 30
-  consul_server_source_image = "consul-server-5f7ad6c0-cb5c-8441-ec6a-7a4a88b8ac8d"
-  consul_client_source_image = "consul-client-5f7ad703-49fa-d268-696c-450726ee8837"
+  consul_server_source_image = "consul-server-5f7ad8fb-5fbf-d673-6eff-be6d9191dbd0"
+  consul_client_source_image = "consul-client-5f7ad90d-8992-94bf-c3a4-7951c7db38dc"
   consul_custom_network_tags = ["bastion-access"]
 }
 

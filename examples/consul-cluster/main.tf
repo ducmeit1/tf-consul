@@ -51,7 +51,7 @@ locals {
   consul_client_root_volume_disk_type = "pd-standard"
   consul_client_root_volume_disk_size_gb = 20
   consul_client_custom_network_tags = ["bastion-access"]
-  consul_client_source_image = "consul-client-5f7b002d-aa1e-2717-4aac-33a57d71efb4"
+  consul_client_source_image = "consul-client-5f7b0cf8-4a6a-cf56-2ff8-f0c78b57d148"
 }
 
 provider "google" {

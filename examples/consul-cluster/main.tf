@@ -16,6 +16,8 @@ locals {
   ip_cidr_range = "10.126.0.0/20"
   total_nat_ips = "1"
   bastion_network_ip = "10.126.0.2"
+  bastion_network_target_tags = ["bastion-access"]
+  bastion_network_target_ports = ["22", "443", "8500"]
   consul_server_cluster_name = "server-dc1"
   consul_server_cluster_size = 3
   consul_server_cluster_tag_name = "consul_gcp_dc1"
@@ -59,10 +61,13 @@ module "bastion" {
   gcp_network = local.network
   gcp_subnetwork = local.subnetwork
   network_ip_address = local.bastion_network_ip
+  network_target_tags = local.bastion_network_target_tags
+  network_target_ports = local.bastion_network_target_ports
   machine_type = "n1-standard-1"
   disk_size_gb = 10
   image_family = "ubuntu-1804-lts"
   preemptible = false
+  
 }
 
 # Optional: Add a bucket to save terraform state on GCS

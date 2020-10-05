@@ -291,7 +291,7 @@ EOF
     consul_connect_configuration=$(
       cat <<EOF
 "connect": {
-  "enabled": true,
+  "enabled": true
 },
 EOF
     )

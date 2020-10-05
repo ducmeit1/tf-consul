@@ -34,7 +34,7 @@ locals {
   consul_server_root_volume_disk_type = "pd-ssd"
   consul_server_root_volume_disk_size_gb = 30
   consul_server_custom_network_tags = ["bastion-access"]
-  consul_server_source_image = "consul-server-5f7af684-41b3-4ea9-a82a-68e98b5ab87d"
+  consul_server_source_image = "consul-server-5f7b00f5-a6be-b88b-5286-51bb669cb9ed"
 }
 
 locals {
@@ -51,7 +51,7 @@ locals {
   consul_client_root_volume_disk_type = "pd-standard"
   consul_client_root_volume_disk_size_gb = 20
   consul_client_custom_network_tags = ["bastion-access"]
-  consul_client_source_image = "consul-client-5f7af752-7324-7e04-faf5-b8be61e1fe53"
+  consul_client_source_image = "consul-client-5f7b002d-aa1e-2717-4aac-33a57d71efb4"
 }
 
 provider "google" {

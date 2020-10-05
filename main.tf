@@ -2,6 +2,10 @@ terraform {
     required_version = ">= 0.12"
 }
 
+resource "random_id" "random_id" {
+  byte_length = 4
+}
+
 resource "google_service_account" "consul_cluster" {
     project = var.gcp_project
     account_id = format("%s-consul-cluster", var.cluster_name)
@@ -14,10 +18,23 @@ resource "google_service_account_iam_binding" "consul_cluster_sa_user" {
     members = var.members
 }
 
-resource "google_project_iam_member" "consul_cluster_sa_bindings" {
+resource "google_project_iam_custom_role" "consul_cluster_custom_role" {
+  role_id     = format("consul_cluster_custom_role_%s", random_id.random_id.dec)
+  title       = "Custom Role For Consul Cluster"
+  description = format("Custom role for consul cluster %s", var.cluster_name)
+  permissions = var.service_account_custom_permissions
+}
+
+resource "google_project_iam_member" "consul_cluster_sa_binding_roles" {
   for_each = toset(var.service_account_roles)
   project = var.gcp_project
   role    = each.value
+  member  = format("serviceAccount:%s", google_service_account.consul_cluster.email)
+}
+
+resource "google_project_iam_member" "consul_cluster_sa_binding_custom_roles" {
+  project = var.gcp_project
+  role    = google_project_iam_custom_role.consul_cluster_custom_role.id
   member  = format("serviceAccount:%s", google_service_account.consul_cluster.email)
 }
 

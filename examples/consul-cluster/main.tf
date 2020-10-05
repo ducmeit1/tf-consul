@@ -17,7 +17,7 @@ locals {
   total_nat_ips = "1"
   bastion_network_ip = "10.126.0.2"
   consul_server_cluster_name = "server-dc1"
-  consul_server_cluster_size = 1
+  consul_server_cluster_size = 3
   consul_server_cluster_tag_name = "consul"
   consul_server_startup_script = "/opt/consul/scripts/server-startup.sh"
   consul_client_startup_script = "/opt/consul/scripts/client-startup.sh"

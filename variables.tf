@@ -258,7 +258,15 @@ variable "service_account_roles" {
     "roles/logging.logWriter",
     "roles/monitoring.metricWriter",
     "roles/monitoring.viewer",
-    "roles/compute.osLogin",
+    "roles/compute.osLogin"
+  ]
+}
+
+variable "service_account_custom_permissions" {
+  type        = list(string)
+  description = "More custom permission will apply for service account."
+  default     = [
+    "compute.zones.list"
   ]
 }
 

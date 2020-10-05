@@ -106,3 +106,15 @@ packer build \
 terraform plan
 terraform apply --auto-approve
 ```
+
+## Consul Features
+
+- [Cloud Auto-join](https://www.consul.io/docs/install/cloud-auto-join) on GCP.
+  
+- [Consul Connect](https://www.consul.io/docs/connect) - Service Mesh.
+  
+- [Consul Encryption](https://learn.hashicorp.com/tutorials/consul/tls-encryption-secure) with Gossip Encryption Key and TLS.
+
+- [Consul WAN Federation](https://www.consul.io/docs/connect/gateways/mesh-gateway/wan-federation-via-mesh-gateways) via Mesh Gateways.
+
+- [Consul DNS](https://learn.hashicorp.com/tutorials/consul/dns-forwarding)

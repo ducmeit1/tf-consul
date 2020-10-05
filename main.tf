@@ -11,7 +11,7 @@ resource "google_service_account" "consul_cluster" {
 resource "google_service_account_iam_member" "consul_cluster_sa_user" {
     service_account_id = google_service_account.consul_cluster.id
     role = "roles/iam.serviceAccountUser"
-    members = var.members
+    member = var.members
 }
 
 resource "google_project_iam_member" "consul_cluster_sa_bindings" {
@@ -103,7 +103,7 @@ resource "google_compute_instance_template" "consul_server" {
   }
 
   service_account {
-    email = google_service_account.consul-cluster.email
+    email = google_service_account.consul_cluster.email
     scopes = concat(
       ["userinfo-email", "compute-ro", var.storage_access_scope],
       var.service_account_scopes,

@@ -27,7 +27,7 @@ locals {
   machine_type = "n1-standard-1"
   root_volume_disk_type = "pd-ssd"
   root_volume_disk_size_gb = 30
-  consul_server_source_image = "consul-server-5f7a1fbb-2cc7-87e7-76d2-4e3f72e6dadd"
+  consul_server_source_image = "consul-server-5f7aaea8-27ad-6e86-a3d6-57b84e196a27"
   consul_client_source_image = "consul-client-5f7a20ba-d5df-689a-23df-ae7d67072350"
   consul_custom_network_tags = ["bastion-access"]
 }

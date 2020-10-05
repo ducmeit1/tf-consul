@@ -74,5 +74,5 @@ output "firewall_rule_inbound_dns_name" {
 }
 
 output "service_account" {
-    value = google_service_account.consul-cluster.email
+    value = google_service_account.consul_cluster.email
 }

@@ -8,10 +8,10 @@ resource "google_service_account" "consul_cluster" {
     display_name = format("Service account for consul cluster %s", var.cluster_name)
 }
 
-resource "google_service_account_iam_member" "consul_cluster_sa_user" {
+resource "google_service_account_iam_binding" "consul_cluster_sa_user" {
     service_account_id = google_service_account.consul_cluster.id
     role = "roles/iam.serviceAccountUser"
-    member = var.members
+    members = var.members
 }
 
 resource "google_project_iam_member" "consul_cluster_sa_bindings" {

@@ -251,12 +251,21 @@ EOF
 "ca_path": "$ca_path",
 "cert_file": "$cert_file_path",
 "key_file": "$key_file_path",
-"auto_encrypt": {
-  "allow_tls": true
-},
 EOF
     )
   fi
+  local auto_encrypt_configuration=""
+
+  if [[ "$server" == "true" ]]; then
+    auto_encrypt_configuration=$(
+      cat <<EOF
+    "auto_encrypt": {
+      "allow_tls": true
+    },
+EOF
+    )
+  fi
+
   local primary_mesh_gateway_address_configuration=""
   local consul_connect_configuration=""
   if [[ "$enable_connect" == "true" ]]; then
@@ -282,7 +291,7 @@ EOF
     consul_connect_configuration=$(
       cat <<EOF
 "connect": {
-  "enabled" true,
+  "enabled": true,
 },
 EOF
     )
@@ -321,6 +330,7 @@ EOF
   "log_level": "INFO",
   $gossip_encryption_configuration
   $rpc_encryption_configuration
+  $auto_encrypt_configuration
   $autopilot_configuration
   $consul_connect_configuration
   $primary_mesh_gateway_address_configuration

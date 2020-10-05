@@ -1,71 +1,108 @@
-# Consul IaC with Terraform on GCP
+# Deploy Consul Server/Client Cluster on GCP with Terraform
 
 ## Introduction
 
-- This Terraform will helps deploy Consul cluster on GCP
-- The repository includes:
-  - Create a private VPC
-  - Create bastion host with GCP Compute VN
-  - Create consul cluster with GCP Compute VM
-  - Create service account
-  - Create firewall
+- This module will:
+  - Create instance template from existed image
+  - Create managed instance group from instance template
+  - Create image by Packer & Ansible
 
 ## Prerequisites
 
-- A GCP Account & Project
-- Terraform CLI >= 12.26
-- GCloud CLI
+- GCloud
+- Ansible >= 2.9
+- Packer >= 1.8.3
+  
+## Usages
 
-## Guidelines
+### TL;DR
 
-- Create a `terraform.tfvars` file which is contains value of global variable includes:
-  - GCP Project ID
-  - GCP Region
-  - GCP Zone
-  - Members assign to the Google Service Account for allowing ssh access
+- Refer to the examples code in `examples/consul-cluster` to understand how to uses this module with sample code.
 
-Example:
+- Build Image with Packer:
 
-```
-region  = "asia-east1"
-project = "driven-stage-xxx"
-zone    = "asia-east1-c"
-members = ["user:your-email@gmail.com"]
+```shell
+cd modules/packer
+packer build consul-server.json
+packer build consul-client.json
 ```
 
-### Google Service Account Credentials
+Copy the Image Name was returned by Packer
 
-Get credentials of your GSA (Google Service Account) from `gcloud` CLI and save to JSON format with file name `credentials.json` by steps:
+- Create gossip encryption key:
 
-- Login to GCP by gcloud: 
-  ```
-  gcloud auth login
-  ```
-  
-- List the GCP project are available: 
-  ```
-  gcloud projects list
-  ```
-  
-- Set your project ID by: 
-  ```
-  gcloud config set project your-project-id
-  ```
-  
-- List the service accounts avaiable: 
-  ```
-  gcloud iam service-accounts list
-  ```
-  
-- Create a new service account key by: 
-  ```
-  gcloud iam service-accounts keys create credentials.json --iam-account=the-service-account-name@project-id.iam.gserviceaccount.com
-  ```
+```shell
+consul keygen
+```
 
-### Run with Terraform
+- Create TLS
 
-- Validate: `terraform validate`
+Create CA Certificate
 
-- Plan: `terraform plan`
+```shell
+cd modules/packer/tls/ca
+consul tls ca create
+```
 
-- Apply: `terraform apply` or `terraform apply --auto-approve`
+Create Server Certificate
+
+```shell
+cd modules/packer/tls/server
+consul tls cert create -server
+```
+
+If you have own CA Ceritificate, you could create certificate by uses:
+
+```shell
+cd modules/packer/tls/server
+consul tls cert server -server -ca-file your-ca.pem -ca-key-file -your-ca-key.pem
+```
+
+Create Client Certificate
+
+```shell
+cd modules/packer/tls/client
+consul tls cert create -client
+```
+
+- Change gossip encryption key in `modules/ansible/consul/defaults` at `consul_gossip_encryption_key` variable.
+
+- You could change templates of startup or shutdown script at: `modules/ansible/consul/templates`
+
+### Uses Packer
+
+- Packer uses to create GCP Image for instance template, please uses the configuration in `modules/packer`. There are two configurations for client and server with includes optional TLS (but recommendation to using). You could test the cluster with the TLS was created in `modules/packer/tls`. Or using `consul tls` to create TLS (Self-signed).
+
+- The require variables must to change:
+  - project_id: GCP Project ID (must change)
+  - zone: GCP Zone (asia-southeast1-c is default)
+  - consul_version: Version of Consul (1.8.4 is default)
+  - gcp_account_file: The credentials file of GSA (Google Service Account), default is `credentials.json` which is located at `modules/packer/credentials.json`
+
+- Uses `packer build consul-server.json` to build Consul Server and `packer build consul-client.json` to build Consul Client.
+
+- By the way, you could uses:
+
+```shell
+packer build \
+  - var 'project_id=your-project-id' \
+  - var 'zone=gcp-zone' \
+  - var 'consul_version=1.8.4' \
+  - var 'gcp_account_file={{template_dir}}/credentials.json' \
+  consul-server.json
+```
+
+> Note: {{template_dir}} will return the working directiry of packer configuration, for example `modules/packer/credentials.json`
+
+### Uses Ansible
+
+- Packer requires Ansible to run scripts, you could read playbook at `modules/ansible`
+- There are two roles will be installed: `consul` and `dnsmaq`
+- Please read and configure value of variables in `defaults`
+
+### Run Terraform
+
+```shell
+terraform plan
+terraform apply --auto-approve
+```

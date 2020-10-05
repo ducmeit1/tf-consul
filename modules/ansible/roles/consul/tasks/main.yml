@@ -7,7 +7,7 @@
 
 - name: Create consul scripts directory
   file:
-    dest: "{{ consul_scripts_dir }}"
+    dest: "{{ consul_script_dir }}"
     state: directory
     owner: "{{ consul_user }}"
     group: "{{ consul_user }}"
@@ -16,7 +16,7 @@
 - name: Install server startup script
   template:
     src: startup-script-server.sh.j2
-    dest: "{{ consul_scripts_dir }}/server-startup.sh"
+    dest: "{{ consul_script_dir }}/server-startup.sh"
     owner: "{{ consul_user }}"
     group: "{{ consul_user }}"
     mode: "a+x"
@@ -24,7 +24,7 @@
 - name: Install server startup script
   template:
     src: startup-script-client.sh.j2
-    dest: "{{ consul_scripts_dir }}/client-startup.sh"
+    dest: "{{ consul_script_dir }}/client-startup.sh"
     owner: "{{ consul_user }}"
     group: "{{ consul_user }}"
     mode: "a+x"
@@ -32,7 +32,7 @@
 - name: Install shutdown script
   template:
     src: shutdown-script.sh.j2
-    dest: "{{ consul_scripts_dir }}/shutdown.sh"
+    dest: "{{ consul_script_dir }}/shutdown.sh"
     owner: "{{ consul_user }}"
     group: "{{ consul_user }}"
     mode: "a+x"

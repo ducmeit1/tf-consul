@@ -194,11 +194,19 @@ function generate_consul_config() {
   if [[ -z "$cluster_tag_name" ]]; then
     log_warn "The --cluster-tag-name property is empty. Will not automatically try to form a cluster based on Cluster Tag Name."
   else
-    retry_join_json=$(
-      cat <<EOF
+    if [[ -z "$zone_pattern" ]]; then
+      retry_join_json=$(
+        cat <<EOF
+"retry_join": ["provider=gce project_name=$project_id tag_value=$cluster_tag_name"],
+EOF
+      )
+    else
+      retry_join_json=$(
+        cat <<EOF
 "retry_join": ["provider=gce project_name=$project_id zone_pattern=$zone_pattern tag_value=$cluster_tag_name"],
 EOF
-    )
+      )
+    fi
   fi
 
   local bootstrap_expect=""

@@ -175,9 +175,7 @@ function generate_consul_config() {
   local -r config_path="$config_dir/$CONSUL_CONFIG_FILE"
 
   shift 20
-  local -ar recursors=("$@")
 
-  local instance_id=""
   local instance_name=""
   local project_id=""
   local instance_ip_address=""
@@ -199,15 +197,6 @@ function generate_consul_config() {
 "retry_join": ["provider=gce project_name=$project_id tag_value=$cluster_tag_name"],
 EOF
     )
-  fi
-
-  local recursors_config=""
-  if [[ ${#recursors[@]} -ne 0 ]]; then
-    recursors_config="\"recursors\" : [ "
-    for recursor in "${recursors[@]}"; do
-      recursors_config="${recursors_config}\"${recursor}\", "
-    done
-    recursors_config=$(echo "${recursors_config}" | sed 's/, $//')" ],"
   fi
 
   local bootstrap_expect=""
@@ -315,8 +304,7 @@ EOF
   $bootstrap_expect
   "client_addr": "0.0.0.0",
   "datacenter": "$datacenter",
-  "node_name": "$instance_id",
-  $recursors_config
+  "node_name": "$instance_name",
   $retry_join_json
   "server": $server,
   "ui": $ui,
@@ -454,7 +442,6 @@ function run() {
   local enable_mesh_gateway_wan_federation="$DEFAULT_ENABLE_MESH_GATEWAY_WAN_FEDERATION"
   local secondary_datacenter="$DEFAULT_SECONDARY_DATACENTER"
   local primary_mesh_gateway_address=""
-  local recursors=()
   local cleanup_dead_servers="$DEFAULT_AUTOPILOT_CLEANUP_DEAD_SERVERS"
   local last_contact_threshold="$DEFAULT_AUTOPILOT_LAST_CONTACT_THRESHOLD"
   local max_trailing_logs="$DEFAULT_AUTOPILOT_MAX_TRAILING_LOGS"
@@ -602,11 +589,6 @@ function run() {
     --skip-consul-config)
       skip_consul_config="true"
       ;;
-    --recursor)
-      assert_not_empty "$key" "$2"
-      recursors+=("$2")
-      shift
-      ;;
     --help)
       print_usage
       exit
@@ -713,8 +695,7 @@ function run() {
       "$enable_connect" \
       "$enable_mesh_gateway_wan_federation" \
       "$secondary_datacenter" \
-      "$primary_mesh_gateway_address" \
-      "${recursors[@]}"
+      "$primary_mesh_gateway_address"
   fi
 
   generate_systemd_config "$SYSTEMD_CONFIG_PATH" "$config_dir" "$data_dir" "$systemd_stdout" "$systemd_stderr" "$bin_dir" "$user" "${environment[@]}"

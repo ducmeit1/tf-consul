@@ -2,16 +2,23 @@ terraform {
     required_version = ">= 0.12"
 }
 
-resource "google_service_account" "consul-cluster" {
+resource "google_service_account" "consul_cluster" {
     project = var.gcp_project
     account_id = format("%s-consul-cluster", var.cluster_name)
-    display_name = "Service account for consul cluster"
+    display_name = format("Service account for consul cluster %s", var.cluster_name)
 }
 
-resource "google_service_account_iam_member" "consul-cluster-sa" {
-    service_account_id = google_service_account.consul-cluster.id
+resource "google_service_account_iam_member" "consul_cluster_sa_user" {
+    service_account_id = google_service_account.consul_cluster.id
     role = "roles/iam.serviceAccountUser"
-    member = format("serviceAccount:%s", google_service_account.consul-cluster.email)
+    members = var.members
+}
+
+resource "google_project_iam_member" "consul_cluster_sa_bindings" {
+  for_each = toset(var.service_account_roles)
+  project = var.gcp_project
+  role    = each.value
+  member  = format("serviceAccount:%s", google_service_account.consul_cluster.email)
 }
 
 # Create the Regional Managed Instance Group where Consul Server will live.

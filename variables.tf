@@ -246,13 +246,24 @@ variable "root_volume_disk_size_gb" {
 }
 
 variable "root_volume_disk_type" {
-  description = "The GCE disk type. Can be either pd-ssd, local-ssd, or pd-standard"
+  description = "The GCE disk type. Can be either pd-ssd, local-ssd, or pd-standard."
   type        = string
   default     = "pd-standard"
 }
 
+variable "service_account_roles" {
+  type        = list(string)
+  description = "Service account roles will apply for service account."
+  default     = [
+    "roles/logging.logWriter",
+    "roles/monitoring.metricWriter",
+    "roles/monitoring.viewer",
+    "roles/compute.osLogin",
+  ]
+}
+
 variable "members" {
-  type = list(string)
-  description = "List of members in the standard GCP form: user:{email}, serviceAccount:{email}, group:{email}"
+  description = "List of members in the standard GCP form: user:{email}, serviceAccount:{email}, group:{email}."
+  type        = list(string)
   default     = []
 }

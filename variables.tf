@@ -63,12 +63,6 @@ variable "shutdown_script" {
 # These parameters have reasonable defaults.
 # ---------------------------------------------------------------------------------------------------------------------
 
-variable "preemptible" {
-  description   = "Enable preemptible for instance"
-  type          = bool
-  default       = false
-}
-
 variable "image_project_id" {
   description = "The name of the GCP Project where the image is located. Useful when using a separate project for custom images. If empty, var.gcp_project_id will be used."
   type        = string

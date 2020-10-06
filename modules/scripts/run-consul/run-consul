@@ -327,7 +327,7 @@ EOF
   )
 
   local acl_configuration=""
-  local node_meta=""
+  local node_meta_configuration=""
 
   if [[ "$server" == "true" ]]; then
     if [[ "$enable_acl_bootstrap" == "true" ]]; then
@@ -359,7 +359,7 @@ EOF
       )
     fi
 
-    node_meta=$(
+    node_meta_configuration=$(
       cat <<EOF
     "node_meta": {
       "cluster_version": "${cluster_version}"
@@ -369,6 +369,7 @@ EOF
   fi
 
   log_info "Creating default Consul configuration"
+
   local default_config_json
   default_config_json=$(
     cat <<EOF
@@ -392,7 +393,7 @@ EOF
   $http_max_conns_per_client_configuration
   $performance_configuration
   $acl_configuration
-  $node_meta
+  $node_meta_configuration
 }
 EOF
   )
@@ -499,8 +500,7 @@ function generate_bootstrap_acl_script() {
   local -r acl_bootstrap_script_path="$3"
 
   log_info "Creating bootstrap Consul ACL policies script"
-  local acl_bootstrap_script
-  acl_bootstrap_script=$(
+  local -r acl_bootstrap_script=$(
     cat <<EOF
   #!bin/bash
   export CONSUL_HTTP_TOKEN=${acl_master_token}
@@ -549,18 +549,18 @@ EOF
   )
 
   log_info "Write Consul ACL bootstrap policies to $acl_bootstrap_script_path"
-  echo "$acl_bootstrap_script" >"$acl_bootstrap_script_path"
+  echo -e "$acl_bootstrap_script" >"$acl_bootstrap_script_path"
   chown 700 "$acl_bootstrap_script_path"
 }
 
 function verify_health() {
   log_info "Wait for consul online"
+
   while true; do
     curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -e . && break
     sleep 5
   done
 
-  # Wait until all new node versions are online
   until [[ $TOTAL_NEW -ge ${total_nodes} ]]; do
     TOTAL_NEW=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er 'map(select(.NodeMeta.cluster_version == "${cluster_version}")) | length')
     sleep 5
@@ -938,7 +938,7 @@ function run() {
   if [[ "$enable_acl_bootstrap" == "true" ]]; then
     local -r acl_bootstrap_script_path = "$script_dir/$CONSUL_ACL_BOOTSTRAP_FILE"
     generate_bootstrap_acl_script "$acl_master_token" "$acl_agent_token" "$acl_bootstrap_script_path"
-    $acl_bootstrap_script_path
+    "$acl_bootstrap_script_path"
   fi
 }
 

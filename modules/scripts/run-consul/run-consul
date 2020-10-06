@@ -367,7 +367,6 @@ EOF
   )
 
   log_info "Installing Consul config file in $config_path"
-  log_debug "$default_config_json"
   echo "$default_config_json" | jq '.' >"$config_path"
   chown "$user:$user" "$config_path"
 }

@@ -36,3 +36,19 @@
     owner: "{{ consul_user }}"
     group: "{{ consul_user }}"
     mode: "a+x"
+
+- name: Install verifying server node script
+  template:
+    src: verify-server-node.sh.j2
+    dest: "{{ consul_script_dir }}/verify-server-node.sh"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_user }}"
+    mode: "a+x"
+
+- name: Install acl bootstrap script
+  template:
+    src: bootstrap-acl.sh.j2
+    dest: "{{ consul_script_dir }}/bootstrap-acl.sh"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_user }}"
+    mode: "a+x"

@@ -4,11 +4,12 @@
 set -e
 
 # Import the appropriate bash commons libraries
-readonly BASH_COMMONS_DIR="/opt/gruntwork/bash-commons"
+readonly BASH_COMMONS_DIR="/opt/bash-commons"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-readonly CONSUL_CONFIG_FILE="default.json"
-readonly CONSUL_ACL_BOOTSTRAP_FILE="acl_bootstrap.sh"
+readonly CONSUL_CONFIG_FILE="config.json"
+readonly VERIFY_SERVER_NODE_FILE="verify-server-node.sh"
+readonly BOOTSTRAP_ACL_FILE="bootstrap-acl.sh"
 readonly SYSTEMD_CONFIG_PATH="/etc/systemd/system/consul.service"
 
 readonly COMPUTE_INSTANCE_METADATA_URL="http://metadata.google.internal/computeMetadata/v1"
@@ -494,113 +495,6 @@ function get_owner_home_dir() {
   echo "$home_dir"
 }
 
-function generate_bootstrap_acl_script() {
-  local -r acl_master_token="$1"
-  local -r acl_agent_token="$2"
-  local -r acl_bootstrap_script_path="$3"
-
-  log_info "Creating bootstrap Consul ACL policies script"
-  local -r acl_bootstrap_script=$(
-    cat <<EOF
-  #!bin/bash
-  export CONSUL_HTTP_TOKEN=${acl_master_token}
-  echo "Creating Consul ACL policies..."
-  if ! consul kv get acl_bootstrap 2>/dev/null; then
-    consul kv put acl_bootstrap 1
-
-    echo '
-    node_prefix "" {
-      policy = "write"
-    }
-    service_prefix "" {
-      policy = "read"
-    }
-    service "consul" {
-      policy = "write"
-    }
-    agent_prefix "" {
-      policy = "write"
-    }' | consul acl policy create -name consul-agent-server -rules -
-
-    echo '
-    node_prefix "" {
-    policy = "read"
-    }
-    service_prefix "" {
-      policy = "read"
-    }
-    session_prefix "" {
-      policy = "read"
-    }
-    agent_prefix "" {
-      policy = "read"
-    }
-    query_prefix "" {
-      policy = "read"
-    }
-    operator = "read"' | consul acl policy create -name anonymous -rules -
-
-    consul acl token create -description "consul agent server token" -policy-name consul-agent-server -secret "${acl_agent_token}" 1>/dev/null
-    consul acl token update -id anonymous -policy-name anonymous 1>/dev/null
-  else
-    echo "Bootstrap already completed"
-  fi
-EOF
-  )
-
-  log_info "Write Consul ACL bootstrap policies to $acl_bootstrap_script_path"
-  echo -e "$acl_bootstrap_script" >"$acl_bootstrap_script_path"
-  chown 700 "$acl_bootstrap_script_path"
-}
-
-function verify_health() {
-  log_info "Wait for consul online"
-
-  while true; do
-    curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -e . && break
-    sleep 5
-  done
-
-  until [[ $TOTAL_NEW -ge ${total_nodes} ]]; do
-    TOTAL_NEW=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er 'map(select(.NodeMeta.cluster_version == "${cluster_version}")) | length')
-    sleep 5
-    echo "Current New Node Count: $TOTAL_NEW"
-  done
-
-  # Wait for a leader
-  until [[ $LEADER -eq 1 ]]; do
-    let LEADER=0
-    echo "Fetching new node ID's"
-    NEW_NODE_IDS=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -r 'map(select(.NodeMeta.cluster_version == "${cluster_version}")) | .[].ID')
-    # Wait until all new nodes are voting
-    until [[ $VOTERS -eq ${bootstrap_expect} ]]; do
-      let VOTERS=0
-      for ID in $NEW_NODE_IDS; do
-        echo "Checking $ID"
-        curl -s http://127.0.0.1:8500/v1/operator/autopilot/health | jq -e ".Servers[] | select(.ID == \"$ID\" and .Voter == true)" && let "VOTERS+=1" && echo "Current Voters: $VOTERS"
-        sleep 2
-      done
-    done
-    echo "Checking Old Nodes"
-    OLD_NODES=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er 'map(select(.NodeMeta.cluster_version != "${cluster_version}")) | length')
-    echo "Current Old Node Count: $OLD_NODES"
-    # Wait for old nodes to drop from voting
-    until [[ $OLD_NODES -eq 0 ]]; do
-      OLD_NODES=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er 'map(select(.NodeMeta.cluster_version != "${cluster_version}")) | length')
-      OLD_NODE_IDS=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -r 'map(select(.NodeMeta.cluster_version != "${cluster_version}")) | .[].ID')
-      for ID in $OLD_NODE_IDS; do
-        echo "Checking Old $ID"
-        curl -s http://127.0.0.1:8500/v1/operator/autopilot/health | jq -e ".Servers[] | select(.ID == \"$ID\" and .Voter == false)" && let "OLD_NODES-=1" && echo "Checking Old Nodes for Voters: $OLD_NODES"
-        sleep 2
-      done
-    done
-    # Check if there is a leader running the newest version
-    LEADER_ID=$(curl -s http://127.0.0.1:8500/v1/operator/autopilot/health | jq -er ".Servers[] | select(.Leader == true) | .ID")
-    curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er ".[] | select(.ID == \"$LEADER_ID\" and .NodeMeta.cluster_version == \"${cluster_version}\")" && let "LEADER+=1" && echo "New Leader: $LEADER_ID"
-    sleep 2
-  done
-}
-
 function run() {
   local server="false"
   local client="false"
@@ -633,6 +527,9 @@ function run() {
   local acl_master_token=""
   local acl_agent_token=""
   local cluster_version=""
+
+  local verify_server_node_file_path=""
+  local bootstrap_acl_file_path=""
 
   local cleanup_dead_servers="$DEFAULT_AUTOPILOT_CLEANUP_DEAD_SERVERS"
   local last_contact_threshold="$DEFAULT_AUTOPILOT_LAST_CONTACT_THRESHOLD"
@@ -850,6 +747,9 @@ function run() {
     script_dir=$(cd "$SCRIPT_DIR/../scripts" && pwd)
   fi
 
+  verify_server_node_file_path="$script_dir/$VERIFY_SERVER_NODE_FILE"
+  bootstrap_acl_file_path="$script_dir/$BOOTSTRAP_ACL_FILE"
+
   if [[ -z "$user" ]]; then
     user=$(get_owner_of_path "$config_dir")
   fi
@@ -934,11 +834,10 @@ function run() {
 
   generate_systemd_config "$SYSTEMD_CONFIG_PATH" "$config_dir" "$data_dir" "$systemd_stdout" "$systemd_stderr" "$bin_dir" "$user" "${environment[@]}"
   start_consul
-  verify_health
+  bash verify_server_node_file_path
+  
   if [[ "$enable_acl_bootstrap" == "true" ]]; then
-    local -r acl_bootstrap_script_path = "$script_dir/$CONSUL_ACL_BOOTSTRAP_FILE"
-    generate_bootstrap_acl_script "$acl_master_token" "$acl_agent_token" "$acl_bootstrap_script_path"
-    "$acl_bootstrap_script_path"
+    bash bootstrap_acl_file_path
   fi
 }
 

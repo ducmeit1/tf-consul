@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+
+export CONSUL_HTTP_TOKEN="{{ consul_acl_master_token }}"
+
+echo "Creating Consul ACL policies..."
+
+if ! consul kv get acl_bootstrap 2>/dev/null; then
+    consul kv put acl_bootstrap 1
+    echo '
+    node_prefix "" {
+      policy = "write"
+    }
+    service_prefix "" {
+      policy = "read"
+    }
+    service "consul" {
+      policy = "write"
+    }
+    agent_prefix "" {
+      policy = "write"
+    }' | consul acl policy create -name consul-agent-server -rules -
+
+    echo '
+    node_prefix "" {
+    policy = "read"
+    }
+    service_prefix "" {
+      policy = "read"
+    }
+    session_prefix "" {
+      policy = "read"
+    }
+    agent_prefix "" {
+      policy = "read"
+    }
+    query_prefix "" {
+      policy = "read"
+    }
+    operator = "read"' | consul acl policy create -name anonymous -rules -
+
+    consul acl token create -description "consul agent server token" -policy-name consul-agent-server -secret "{{ consul_acl_agent_token }}" 1>/dev/null
+    consul acl token update -id anonymous -policy-name anonymous 1>/dev/null
+else
+    echo "Bootstrap already completed"
+fi

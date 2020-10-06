@@ -8,7 +8,7 @@
 set -e
 
 # Import the appropriate bash commons libraries
-readonly BASH_COMMONS_DIR="/opt/gruntwork/bash-commons"
+readonly BASH_COMMONS_DIR="/opt/bash-commons"
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 readonly DEFAULT_CONSUL_DOMAIN="consul"

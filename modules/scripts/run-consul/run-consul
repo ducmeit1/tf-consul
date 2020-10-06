@@ -834,10 +834,10 @@ function run() {
 
   generate_systemd_config "$SYSTEMD_CONFIG_PATH" "$config_dir" "$data_dir" "$systemd_stdout" "$systemd_stderr" "$bin_dir" "$user" "${environment[@]}"
   start_consul
-  bash verify_server_node_file_path
+  bash "$verify_server_node_file_path"
   
   if [[ "$enable_acl_bootstrap" == "true" ]]; then
-    bash bootstrap_acl_file_path
+    bash "$bootstrap_acl_file_path"
   fi
 }
 

@@ -20,6 +20,6 @@ consul_key_file_path: "{{ consul_dir_path }}/tls/key.pem"
 consul_bin_dir: "/usr/local/bin"
 consul_gossip_encryption_key: "8NxEfoWD5XfXnE5dyOZlhmvFDD0LJp4E7EZbtE+38LY="
 consul_http_max_connections_per_client: 256
-consul_acl_master_token: "YYlIhyoW+4q9th/6BNoUUPTfFW8dQJpyukkZPh/F4Mo="
-consul_acl_agent_token: "CvACGYGduWBG+spXDaTPTUufBoehwLOoksavSQ+HuqI="
+consul_acl_master_token: "aefb6c04-4e30-4f34-89c2-f2c385da797a"
+consul_acl_agent_token: "941b485f-9fcf-49cc-96c2-0ff50b929b3d"
 consul_cluster_version: "0.0.1"

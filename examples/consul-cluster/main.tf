@@ -22,7 +22,7 @@ locals {
 
 locals {
   consul_server_cluster_name = "server-gcp-dc1"
-  consul_server_cluster_size = 0
+  consul_server_cluster_size = 3
   consul_server_cluster_tag_name = "consul-gcp-dc1"
   consul_server_startup_script = "/opt/consul/scripts/server-startup.sh"
   consul_server_shutdown_script = "/opt/consul/scripts/shutdown.sh"
@@ -34,7 +34,7 @@ locals {
   consul_server_root_volume_disk_type = "pd-ssd"
   consul_server_root_volume_disk_size_gb = 30
   consul_server_custom_network_tags = ["bastion-access"]
-  consul_server_source_image = "consul-server-5f7c1994-6f51-4be1-2e3f-2b3aba56919c"
+  consul_server_source_image = "consul-server-5f7c2bfe-c09c-da0c-8f32-9c44dd089e1f"
 }
 
 locals {

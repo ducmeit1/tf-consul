@@ -8,7 +8,7 @@ while true; do
     sleep 5
 done
 
-until [[ $TOTAL_NEW -ge {{ consul_server_total_node }} ]]; do
+until [[ $TOTAL_NEW -ge {{ consul_server_cluster_size }} ]]; do
     TOTAL_NEW=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er 'map(select(.NodeMeta.cluster_version == "{{ consul_cluster_version }}")) | length')
     sleep 5
     echo "Current New Node Count: $TOTAL_NEW"

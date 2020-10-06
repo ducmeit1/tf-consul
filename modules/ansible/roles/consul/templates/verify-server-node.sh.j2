@@ -9,7 +9,7 @@ while true; do
 done
 
 until [[ $TOTAL_NEW -ge ${total_nodes} ]]; do
-    TOTAL_NEW=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er 'map(select(.NodeMeta.cluster_version == "{{ cluster_version }}")) | length')
+    TOTAL_NEW=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er 'map(select(.NodeMeta.cluster_version == "{{ consul_cluster_version }}")) | length')
     sleep 5
     echo "Current New Node Count: $TOTAL_NEW"
 done
@@ -18,7 +18,7 @@ done
 until [[ $LEADER -eq 1 ]]; do
     let LEADER=0
     echo "Fetching new node ID's"
-    NEW_NODE_IDS=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -r 'map(select(.NodeMeta.cluster_version == "{{ cluster_version }}")) | .[].ID')
+    NEW_NODE_IDS=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -r 'map(select(.NodeMeta.cluster_version == "{{ consul_cluster_version }}")) | .[].ID')
     # Wait until all new nodes are voting
     until [[ $VOTERS -eq ${bootstrap_expect} ]]; do
         let VOTERS=0
@@ -29,12 +29,12 @@ until [[ $LEADER -eq 1 ]]; do
         done
     done
     echo "Checking Old Nodes"
-    OLD_NODES=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er 'map(select(.NodeMeta.cluster_version != "{{ cluster_version }}")) | length')
+    OLD_NODES=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er 'map(select(.NodeMeta.cluster_version != "{{ consul_cluster_version }}")) | length')
     echo "Current Old Node Count: $OLD_NODES"
     # Wait for old nodes to drop from voting
     until [[ $OLD_NODES -eq 0 ]]; do
-        OLD_NODES=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er 'map(select(.NodeMeta.cluster_version != "{{ cluster_version }}")) | length')
-        OLD_NODE_IDS=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -r 'map(select(.NodeMeta.cluster_version != "{{ cluster_version }}")) | .[].ID')
+        OLD_NODES=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er 'map(select(.NodeMeta.cluster_version != "{{ consul_cluster_version }}")) | length')
+        OLD_NODE_IDS=$(curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -r 'map(select(.NodeMeta.cluster_version != "{{ consul_cluster_version }}")) | .[].ID')
         for ID in $OLD_NODE_IDS; do
             echo "Checking Old $ID"
             curl -s http://127.0.0.1:8500/v1/operator/autopilot/health | jq -e ".Servers[] | select(.ID == \"$ID\" and .Voter == false)" && let "OLD_NODES-=1" && echo "Checking Old Nodes for Voters: $OLD_NODES"
@@ -43,6 +43,6 @@ until [[ $LEADER -eq 1 ]]; do
     done
     # Check if there is a leader running the newest version
     LEADER_ID=$(curl -s http://127.0.0.1:8500/v1/operator/autopilot/health | jq -er ".Servers[] | select(.Leader == true) | .ID")
-    curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er ".[] | select(.ID == \"$LEADER_ID\" and .NodeMeta.cluster_version == \"{{ cluster_version }}\")" && let "LEADER+=1" && echo "New Leader: $LEADER_ID"
+    curl -s http://127.0.0.1:8500/v1/catalog/service/consul | jq -er ".[] | select(.ID == \"$LEADER_ID\" and .NodeMeta.cluster_version == \"{{ consul_cluster_version }}\")" && let "LEADER+=1" && echo "New Leader: $LEADER_ID"
     sleep 2
 done

@@ -261,8 +261,8 @@ EOF
 EOF
     )
   fi
-  local auto_encrypt_configuration=""
 
+  local auto_encrypt_configuration=""
   if [[ "$server" == "true" ]]; then
     auto_encrypt_configuration=$(
       cat <<EOF
@@ -313,7 +313,6 @@ EOF
   )
 
   local acl_configuration=""
-
   if [[ $server == "true" ]]; then
     acl_configuration=$(
       cat <<EOF
@@ -329,6 +328,7 @@ EOF
       },
 EOF
     )
+  fi
 
   local performance_configuration=$(
     cat <<EOF
@@ -487,7 +487,7 @@ function run_bootstrap_acl() {
     policy = "write"
   }' | consul acl policy create -name consul-agent-server -rules -
 
-  echo '
+    echo '
   node_prefix "" {
     policy = "read"
   }

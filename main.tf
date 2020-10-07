@@ -46,7 +46,6 @@ module "consul_server" {
 
   service_account_scopes              = var.service_account_scopes
   service_account_roles               = var.service_account_roles
-  service_account_custom_permissions  = var.service_account_custom_permissions
   members                             = var.members
 
   # Add custom metadata to instances
@@ -62,4 +61,20 @@ module "consul_server" {
 data "google_compute_zones" "available" {
   project = var.gcp_project
   region  = var.gcp_region
+}
+
+# These steps are requires to use auto cloud cluster join
+
+resource "google_project_iam_custom_role" "default" {
+  role_id     = format("custom_role_%s_ig", replace(var.cluster_name, "-", "_"))
+  title       = format("Custom Role For Consul Cluster %s-ig", var.cluster_name)
+  description = format("Custom role for consul cluster %s-ig", var.cluster_name)
+  permissions = var.service_account_custom_permissions
+}
+
+resource "google_project_iam_member" "default" {
+  for_each = toset(var.service_account_roles)
+  project = var.gcp_project
+  role    = each.value
+  member  = format("serviceAccount:%s", module.consul_server.service_account)
 }

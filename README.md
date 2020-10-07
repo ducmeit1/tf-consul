@@ -2,6 +2,13 @@
 
 This module help you deploy a consul cluster with managed instance group on GCP with Terraform.
 
+This module will:
+
+- Create a instance template
+- Create a instance group with created instance template
+- Create firewalls
+- Create a custom role to allow use auto cloud cluster join
+
 ## Usages
 
 - You could uses a base image and install Consul by Ansible Playbook, or hand manually. Optional, you could use Packer to package a image have installed Consul. (You could refer to: [packer-consul-gcp](https://github.com/ducmeit1/packer-consul-gcp))

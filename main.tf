@@ -32,6 +32,7 @@ module "consul_server" {
   # deployed with.
   image_project_id = var.image_project_id
   source_image = var.source_image
+  family_image = var.family_image
 
 
   # This update strategy will performing a rolling update of the Consul cluster server nodes. We wait 5 minutes for

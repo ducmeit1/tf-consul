@@ -13,6 +13,8 @@ This module will:
 
 - You could uses a base image and install Consul by Ansible Playbook, or hand manually. Optional, you could use Packer to package a image have installed Consul. (You could refer to: [packer-consul-gcp](https://github.com/ducmeit1/packer-consul-gcp))
 
+> **Attentions**: There are two ways to set image for instance template, you could use your own image, or base image on GCP. To use base image, please define family_image and project_image_id as example below. Otherwise, you must set image by use source_image.
+
 ```hcl
 module "consul-server" {
   source = "github.com/ducmeit1/tf-consul-gcp"
@@ -27,7 +29,8 @@ module "consul-server" {
   cluster_description                     = "consul cluster dc1 on gcp"
   custom_tags                             = ["dc1", "gcp"]
   machine_type                            = "n1-standard-1"
-  source_image                            = "ubuntu-1804-lts"
+  family_image                            = "debian-9"
+  image_project_id                        = "debian-cloud"
   startup_script                          = "gs://my-gcs-bucket/scripts/startup-script.sh"
   shutdown_script                         = "gs://my-gcs-bucket/scripts/shutdown-script.sh"
   root_volume_disk_size_gb                = 30

@@ -328,6 +328,20 @@ EOF
       },
 EOF
     )
+  else
+    acl_configuration=$(
+      cat <<EOF
+      "acl": {
+        "enabled": true,
+        "default_policy": "deny",
+        "enable_token_persistence": true,
+        "tokens": {
+          "agent": "${acl_agent_token}"
+        },
+        "down_policy": "extend-cache"
+      },
+EOF
+    )
   fi
 
   local performance_configuration=$(
@@ -801,6 +815,8 @@ function run() {
 
     if [[ "$server" == "true" ]]; then
       assert_not_empty "--acl-master-token" "$acl_master_token"
+      assert_not_empty "--acl-agent-token" "$acl_agent_token"
+      else
       assert_not_empty "--acl-agent-token" "$acl_agent_token"
     fi
 

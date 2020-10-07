@@ -15,23 +15,23 @@ output "cluster_tag_name" {
 }
 
 output "instance_group_url" {
-  value = google_compute_region_instance_group_manager.consul_server.self_link
+  value = module.consul_server.instance_group_url
 }
 
 output "instance_group_name" {
-  value = google_compute_region_instance_group_manager.consul_server.name
+  value = module.consul_server.instance_group_name
 }
 
 output "instance_template_url" {
-  value = google_compute_instance_template.consul_server.self_link
+  value = module.consul_server.instance_template_url
 }
 
 output "instance_template_name" {
-  value = google_compute_instance_template.consul_server.name
+  value = module.consul_server.instance_template_name
 }
 
 output "instance_template_metadata_fingerprint" {
-  value = google_compute_instance_template.consul_server.metadata_fingerprint
+  value = module.consul_server.instance_template_metadata_fingerprint
 }
 
 output "firewall_rule_intracluster_url" {
@@ -74,5 +74,5 @@ output "firewall_rule_inbound_dns_name" {
 }
 
 output "service_account" {
-    value = google_service_account.consul_cluster.email
+    value = module.consul_server.service_account
 }

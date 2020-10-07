@@ -81,18 +81,6 @@ variable "service_account_scopes" {
   default     = ["cloud-platform"]
 }
 
-variable "storage_access_scope" {
-  description = "Used to set the access permissions for Google Cloud Storage. As of September 2018, this must be one of ['', 'storage-ro', 'storage-rw', 'storage-full']"
-  type        = string
-  default     = "storage-ro"
-}
-
-variable "instance_group_target_pools" {
-  description = "To use a Load Balancer with the Consul cluster, you must populate this value. Specifically, this is the list of Target Pool URLs to which new Compute Instances in the Instance Group created by this module will be added. Note that updating the Target Pools attribute does not affect existing Compute Instances. Note also that use of a Load Balancer with Consul is generally discouraged; client should instead prefer to talk directly to the server where possible."
-  type        = list(string)
-  default     = []
-}
-
 variable "cluster_description" {
   description = "A description of the Consul cluster; it will be added to the Compute Instance Template."
   type        = string
@@ -127,56 +115,6 @@ variable "allowed_inbound_tags_dns" {
   description = "A list of tags from which the Compute Instances will allow TCP DNS and UDP DNS connections to Consul."
   type        = list(string)
   default     = []
-}
-
-# Update Policy
-
-variable "instance_group_update_policy_type" {
-  description = "The type of update process. You can specify either PROACTIVE so that the instance group manager proactively executes actions in order to bring instances to their target versions or OPPORTUNISTIC so that no action is proactively executed but the update will be performed as part of other actions (for example, resizes or recreateInstances calls)."
-  type        = string
-  default     = "PROACTIVE"
-}
-
-variable "instance_group_update_policy_redistribution_type" {
-  description = "The instance redistribution policy for regional managed instance groups. Valid values are: 'PROACTIVE' and 'NONE'. If 'PROACTIVE', the group attempts to maintain an even distribution of VM instances across zones in the region. If 'NONE', proactive redistribution is disabled."
-  type        = string
-  default     = "PROACTIVE"
-}
-
-variable "instance_group_update_policy_minimal_action" {
-  description = "Minimal action to be taken on an instance. You can specify either 'RESTART' to restart existing instances or 'REPLACE' to delete and create new instances from the target template. If you specify a 'RESTART', the Updater will attempt to perform that action only. However, if the Updater determines that the minimal action you specify is not enough to perform the update, it might perform a more disruptive action."
-  type        = string
-  default     = "REPLACE"
-}
-
-variable "instance_group_update_policy_max_surge_fixed" {
-  description = "The maximum number of instances that can be created above the specified targetSize during the update process. Conflicts with var.instance_group_update_policy_max_surge_percent. See https://www.terraform.io/docs/providers/google/r/compute_region_instance_group_manager.html#max_surge_fixed for more information."
-  type        = number
-  default     = 3
-}
-
-variable "instance_group_update_policy_max_surge_percent" {
-  description = "The maximum number of instances(calculated as percentage) that can be created above the specified targetSize during the update process. Conflicts with var.instance_group_update_policy_max_surge_fixed. Only allowed for regional managed instance groups with size at least 10."
-  type        = number
-  default     = null
-}
-
-variable "instance_group_update_policy_max_unavailable_fixed" {
-  description = "The maximum number of instances that can be unavailable during the update process. Conflicts with var.instance_group_update_policy_max_unavailable_percent. It has to be either 0 or at least equal to the number of zones. If fixed values are used, at least one of var.instance_group_update_policy_max_unavailable_fixed or var.instance_group_update_policy_max_surge_fixed must be greater than 0."
-  type        = number
-  default     = 0
-}
-
-variable "instance_group_update_policy_max_unavailable_percent" {
-  description = "The maximum number of instances(calculated as percentage) that can be unavailable during the update process. Conflicts with var.instance_group_update_policy_max_unavailable_fixed. Only allowed for regional managed instance groups with size at least 10."
-  type        = number
-  default     = null
-}
-
-variable "instance_group_update_policy_min_ready_sec" {
-  description = "Minimum number of seconds to wait for after a newly created instance becomes available. This value must be between 0-3600."
-  type        = number
-  default     = 300
 }
 
 # Metadata

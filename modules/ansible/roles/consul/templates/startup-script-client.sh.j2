@@ -1,4 +1,0 @@
-#!/bin/bash
-set - e
-
-/opt/consul/bin/run-consul --client --cluster-tag-name {{ consul_cluster_tag_name }} --zone-pattern {{ consul_cluster_zone_pattern }} --datacenter {{ consul_datacenter }} --config-dir {{ consul_config_dir }} --data-dir {{ consul_data_dir }} --bin-dir {{ consul_bin_dir }} --script-dir {{ consul_script_dir }} --user {{ consul_user }} --enable-gossip-encryption --gossip-encryption-key {{ consul_gossip_encryption_key }} --enable-rpc-encryption --ca-path {{ consul_ca_file_path }} --cert-file-path {{ consul_cert_file_path }} --key-file-path {{ consul_key_file_path }} --acl-agent-token {{ consul_acl_agent_token }}

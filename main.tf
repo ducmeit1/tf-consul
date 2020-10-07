@@ -1,143 +1,65 @@
 terraform {
-    required_version = ">= 0.12"
+  # This module has been updated with 0.12 syntax, which means it is no longer compatible with any versions below 0.12.
+  required_version = ">= 0.12"
 }
 
-resource "random_id" "random_id" {
-  byte_length = 4
-}
+module "consul_server" {
+  source = "github.com/ducmeit1/tf-instance-group-gcp"
+  gcp_project         = var.gcp_project
+  gcp_region          = var.gcp_region
+  gcp_network         = var.gcp_network
+  gcp_subnetwork      = var.gcp_subnetwork
+  network_project_id  = var.network_project_id
+  name                = var.cluster_name
+  description         = var.cluster_description
+  target_size         = var.cluster_size
+  tags                = concat([var.cluster_tag_name], var.custom_tags)
+  startup_script      = var.startup_script
+  shutdown_script     = var.shutdown_script
 
-resource "google_service_account" "consul_cluster" {
-    project = var.gcp_project
-    account_id = format("%s-consul-cluster", var.cluster_name)
-    display_name = format("Service account for consul cluster %s", var.cluster_name)
-}
+  # WARNING! These configuration values are suitable for testing, but for production, see https://www.consul.io/docs/guides/performance.html
+  # Production recommendations:
+  # - machine_type: At least n1-standard-2 (so that Consul can use at least 2 cores); confirm that you have enough RAM
+  #                 to contain between 2 - 4 times the working set size.
+  # - root_volume_disk_type: pd-ssd or local-ssd (for write-heavy workloads, use SSDs for the best write throughput)
+  # - root_volume_disk_size_gb: Consul's data set is persisted, so this depends on the size of your expected data set
+  machine_type = var.machine_type
 
-resource "google_service_account_iam_binding" "consul_cluster_sa_user" {
-    service_account_id = google_service_account.consul_cluster.id
-    role = "roles/iam.serviceAccountUser"
-    members = var.members
-}
+  root_volume_disk_type    = var.root_volume_disk_type
+  root_volume_disk_size_gb = var.root_volume_disk_size_gb
 
-resource "google_project_iam_custom_role" "consul_cluster_custom_role" {
-  role_id     = format("consul_cluster_custom_role_%s", random_id.random_id.dec)
-  title       = "Custom Role For Consul Cluster"
-  description = format("Custom role for consul cluster %s", var.cluster_name)
-  permissions = var.service_account_custom_permissions
-}
+  # In production, you should specify the exact image name to make it clear which image the current Consul servers are
+  # deployed with.
+  image_project_id = var.image_project_id
+  source_image = var.source_image
 
-resource "google_project_iam_member" "consul_cluster_sa_binding_roles" {
-  for_each = toset(var.service_account_roles)
-  project = var.gcp_project
-  role    = each.value
-  member  = format("serviceAccount:%s", google_service_account.consul_cluster.email)
-}
 
-resource "google_project_iam_member" "consul_cluster_sa_binding_custom_roles" {
-  project = var.gcp_project
-  role    = google_project_iam_custom_role.consul_cluster_custom_role.id
-  member  = format("serviceAccount:%s", google_service_account.consul_cluster.email)
-}
+  # This update strategy will performing a rolling update of the Consul cluster server nodes. We wait 5 minutes for
+  # the newly created server nodes to become available to ensure they have enough time to join the cluster and
+  # propagate the data.
+  instance_group_update_policy_type                  = "PROACTIVE"
+  instance_group_update_policy_redistribution_type   = "PROACTIVE"
+  instance_group_update_policy_minimal_action        = "REPLACE"
+  instance_group_update_policy_max_surge_fixed       = length(data.google_compute_zones.available.names)
+  instance_group_update_policy_max_unavailable_fixed = 0
+  instance_group_update_policy_min_ready_sec         = 300
 
-# Create the Regional Managed Instance Group where Consul Server will live.
-resource "google_compute_region_instance_group_manager" "consul_server" {
-  project = var.gcp_project
-  name    = format("%s-ig", var.cluster_name)
+  service_account_scopes              = var.service_account_scopes
+  service_account_roles               = var.service_account_roles
+  service_account_custom_permissions  = var.service_account_custom_permissions
+  members                             = var.members
 
-  base_instance_name = var.cluster_name
-  region             = var.gcp_region
-
-  version {
-    instance_template = google_compute_instance_template.consul_server.self_link
-  }
-
-  # Consul Server is a stateful cluster, so the update strategy used to roll out a new GCE Instance Template must be
-  # a rolling update.
-  update_policy {
-    type                         = var.instance_group_update_policy_type
-    instance_redistribution_type = var.instance_group_update_policy_redistribution_type
-    minimal_action               = var.instance_group_update_policy_minimal_action
-    max_surge_fixed              = var.instance_group_update_policy_max_surge_fixed
-    max_surge_percent            = var.instance_group_update_policy_max_surge_percent
-    max_unavailable_fixed        = var.instance_group_update_policy_max_unavailable_fixed
-    max_unavailable_percent      = var.instance_group_update_policy_max_unavailable_percent
-    min_ready_sec                = var.instance_group_update_policy_min_ready_sec
-  }
-
-  target_pools = var.instance_group_target_pools
-  target_size  = var.cluster_size
-
-  depends_on = [
-    google_compute_instance_template.consul_server
-  ]
-
-  lifecycle {
-    create_before_destroy = true
-  }
-}
-
-# Create the Instance Template that will be used to populate the Managed Instance Group.
-resource "google_compute_instance_template" "consul_server" {
-  project = var.gcp_project
-
-  name_prefix = var.cluster_name
-  description = var.cluster_description
-
-  instance_description = var.cluster_description
-  machine_type         = var.machine_type
-
-  tags                    = concat([var.cluster_tag_name], var.custom_tags)
-  metadata_startup_script = var.startup_script
-  metadata = merge(
+  # Add custom metadata to instances
+  custom_metadata = merge(
     {
-      "${var.metadata_key_name_for_cluster_size}" = var.cluster_size,
-
-      # The Terraform Google provider currently doesn't support a `metadata_shutdown_script` argument so we manually
-      # set it here using the instance metadata.
-      "shutdown-script" = var.shutdown_script,
-      "enable-oslogin" = "TRUE"
+      "${var.metadata_key_name_for_cluster_size}" = var.cluster_size
     },
-    var.custom_metadata,
+    var.custom_metadata
   )
-
-  scheduling {
-    automatic_restart   = true
-    on_host_maintenance = "MIGRATE"
-    preemptible         = false
-  }
-
-  disk {
-    boot         = true
-    auto_delete  = true
-    source_image = data.google_compute_image.image.self_link
-    disk_size_gb = var.root_volume_disk_size_gb
-    disk_type    = var.root_volume_disk_type
-  }
-
-  network_interface {
-    network            = var.gcp_network
-    subnetwork         = var.gcp_subnetwork
-    subnetwork_project = var.network_project_id != null ? var.network_project_id : null
-  }
-
-  service_account {
-    email = google_service_account.consul_cluster.email
-    scopes = concat(
-      ["userinfo-email", "compute-ro", var.storage_access_scope],
-      var.service_account_scopes,
-    )
-  }
-
-  # Per Terraform Docs (https://www.terraform.io/docs/providers/google/r/compute_instance_template.html#using-with-instance-group-manager),
-  # we need to create a new instance template before we can destroy the old one. Note that any Terraform resource on
-  # which this Terraform resource depends will also need this lifecycle statement.
-  lifecycle {
-    create_before_destroy = true
-  }
 }
 
-# This is a workaround for a provider bug in Terraform v0.11.8. For more information please refer to:
-# https://github.com/terraform-providers/terraform-provider-google/issues/2067.
-data "google_compute_image" "image" {
-  name    = var.source_image
-  project = var.image_project_id != null ? var.image_project_id : var.gcp_project
+# In production, the cluster should be failover by multiple nodes, we would like to deploy in multiple zones of in a region to prevent disaster
+data "google_compute_zones" "available" {
+  project = var.gcp_project
+  region  = var.gcp_region
 }

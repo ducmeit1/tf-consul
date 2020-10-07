@@ -21,7 +21,6 @@ module "consul-server" {
   custom_tags                             = ["dc1", "gcp"]
   machine_type                            = "n1-standard-1"
   source_image                            = "ubuntu-1804-lts"
-  target_size                             = 3
   startup_script                          = "gs://my-gcs-bucket/scripts/startup-script.sh"
   shutdown_script                         = "gs://my-gcs-bucket/scripts/shutdown-script.sh"
   root_volume_disk_size_gb                = 30

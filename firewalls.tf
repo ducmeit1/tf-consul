@@ -16,7 +16,9 @@ resource "google_compute_firewall" "allow_intracluster_consul" {
       var.serf_lan_port,
       var.serf_wan_port,
       var.http_api_port,
+      var.https_api_port,
       var.dns_port,
+      var.grpc_port,
     ]
   }
 
@@ -51,6 +53,7 @@ resource "google_compute_firewall" "allow_inbound_http_api" {
 
     ports = [
       var.http_api_port,
+      var.https_api_port
     ]
   }
 

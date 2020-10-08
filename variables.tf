@@ -166,9 +166,21 @@ variable "serf_wan_port" {
 }
 
 variable "http_api_port" {
-  description = "The port used by clients to talk to the HTTP API"
+  description = "The port used by clients to talk to the HTTP API."
   type        = number
   default     = 8500
+}
+
+variable "https_api_port" {
+  description = "The port used by clients to talk to the HTTPS API."
+  type        = number
+  default     = 8501
+}
+
+variable "grpc_port" {
+  description = "The port used by clients to talk to the Connect Inject/Mesh Gateway."
+  type        = number
+  default     = 8502
 }
 
 variable "dns_port" {

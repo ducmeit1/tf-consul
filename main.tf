@@ -79,3 +79,9 @@ resource "google_project_iam_member" "default" {
   role    = each.value
   member  = format("serviceAccount:%s", module.consul_server.service_account)
 }
+
+resource "google_project_iam_member" "custom" {
+  project     = var.gcp_project
+  role        = google_project_iam_custom_role.default.id
+  member      = format("serviceAccount:%s", module.consul_server.service_account)
+}

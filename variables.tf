@@ -227,3 +227,9 @@ variable "members" {
   type        = list(string)
   default     = []
 }
+
+variable "enable_pubic_ip" {
+  description = "Enable adding public ip address for consul server."
+  type        = bool
+  default     = false
+}

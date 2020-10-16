@@ -16,6 +16,7 @@ module "consul_server" {
   tags                = concat([var.cluster_tag_name], var.custom_tags)
   startup_script      = var.startup_script
   shutdown_script     = var.shutdown_script
+  enable_pubic_ip     = var.enable_pubic_ip
   
   instance_template_name = var.instance_template_name
 

@@ -4,7 +4,7 @@ terraform {
 }
 
 module "consul_server" {
-  source = "github.com/ducmeit1/tf-instance-group-gcp"
+  source              = "github.com/ducmeit1/tf-instance-group-gcp"
   gcp_project         = var.gcp_project
   gcp_region          = var.gcp_region
   gcp_network         = var.gcp_network
@@ -16,6 +16,8 @@ module "consul_server" {
   tags                = concat([var.cluster_tag_name], var.custom_tags)
   startup_script      = var.startup_script
   shutdown_script     = var.shutdown_script
+  
+  instance_template_name = var.instance_template_name
 
   # WARNING! These configuration values are suitable for testing, but for production, see https://www.consul.io/docs/guides/performance.html
   # Production recommendations:

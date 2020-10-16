@@ -53,6 +53,11 @@ variable "shutdown_script" {
   type        = string
 }
 
+variable "instance_template_name" {
+  description = "Set instance template name of instance groups will be created."
+  type        = string
+}
+
 # ---------------------------------------------------------------------------------------------------------------------
 # OPTIONAL PARAMETERS
 # These parameters have reasonable defaults.
